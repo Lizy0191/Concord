@@ -1,0 +1,134 @@
+.graph-shell {
+  height: 100%;
+  min-height: 350px;
+  position: relative;
+}
+.graph-caption {
+  position: absolute;
+  left: 21px;
+  top: 18px;
+  z-index: 2;
+  color: #8b999e;
+  font-size: 9px;
+  letter-spacing: 0.9px;
+}
+.graph-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 2;
+  display: flex;
+  gap: 14px;
+  font-size: 9px;
+  color: #809097;
+  background: #f8fafade;
+  padding: 8px;
+}
+.react-flow__node-default {
+  background: #fff;
+  border: 1px solid #cfdadc;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px #1c3a4510;
+  padding: 12px;
+  text-align: left;
+  color: #31454d;
+  width: 195px;
+  font-size: 11px;
+}
+.react-flow__node-default.selected {
+  border-color: #3e8c80;
+  box-shadow: 0 0 0 2px #73ab9a25;
+}
+.react-flow__node-default strong {
+  display: block;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.react-flow__node-default small {
+  display: block;
+  font-size: 9px;
+  color: #829397;
+  margin-top: 6px;
+}
+.react-flow__node-default .eyebrow {
+  font-size: 8px;
+  margin-bottom: 5px;
+}
+.react-flow__node-default.source-node {
+  background: #f6f8f9;
+  border-style: dashed;
+}
+.react-flow__node-default.constraint-node {
+  background: #fffaf1;
+  border-color: #d9ba88;
+}
+.react-flow__node-default.action-node {
+  background: #eef7f3;
+  border-color: #a6cbbd;
+}
+.react-flow__node-default.ready-node {
+  border-color: #a0c8b9;
+}
+.react-flow__handle {
+  height: 5px;
+  width: 5px;
+  background: #a5b6bb;
+  border: 1px solid #fff;
+}
+.react-flow__edge-path {
+  stroke: #b4c4c9;
+  stroke-width: 1.3;
+}
+.react-flow__controls {
+  box-shadow: 0 1px 4px #203e4820;
+  border: 1px solid #dbe3e6;
+}
+.react-flow__attribution {
+  font-size: 8px !important;
+  color: #98a3a6;
+}
+.react-flow__edge-text {
+  font-size: 9px;
+  fill: #839396;
+}
+.graph-canvas {
+  position: absolute;
+  inset: 0;
+  min-height: 280px;
+}
+.canvas-label {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  color: #8a989c;
+  font-size: 10px;
+}
+.graph-node strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 7px 0;
+}
+.graph-node small {
+  display: block;
+  color: #7a8d93;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+.graph-node span {
+  display: block;
+  font-size: 10px;
+  color: #7a8d93;
+}
+.react-flow__node-default.node-blocked {
+  border-color: #cda363;
+}
+.react-flow__node-default.node-ready {
+  border-color: #a0c8b9;
+}

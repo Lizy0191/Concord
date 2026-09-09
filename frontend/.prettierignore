@@ -1,0 +1,3 @@
+# Generated API contract artifacts; regenerate, never reformat by hand.
+openapi.json
+src/api/schema.ts

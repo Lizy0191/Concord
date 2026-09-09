@@ -1,0 +1,78 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #10252b66;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.event-dialog {
+  background: white;
+  width: 470px;
+  max-width: 94vw;
+  border-radius: 9px;
+  box-shadow: 0 15px 80px #132d3960;
+  padding: 26px;
+}
+.event-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 21px;
+}
+.event-dialog header button {
+  border: none;
+  background: transparent;
+  font-size: 19px;
+  color: #7a8b91;
+}
+.event-dialog label {
+  display: block;
+  font-size: 11px;
+  color: #6c7c83;
+  margin: 13px 0;
+}
+.event-dialog input,
+.event-dialog select,
+.event-dialog textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+.event-dialog p {
+  font-size: 10px;
+  color: #8a969a;
+  line-height: 1.6;
+  margin: 10px 0;
+}
+.event-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 23px;
+}
+.form-label {
+  display: block;
+  font-size: 11px;
+  margin-top: 14px;
+  color: #73888c;
+}
+.form-label input,
+.form-label textarea,
+.form-label select {
+  width: 100%;
+  display: block;
+  margin-top: 6px;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin: 18px 0;
+}
+.event-dialog > small {
+  font-size: 10px;
+  color: #859694;
+}

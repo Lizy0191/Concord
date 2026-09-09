@@ -1,0 +1,157 @@
+.documents-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.document-toolbar {
+  padding: 16px 20px;
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  background: #f8faf9;
+  align-items: center;
+}
+.document-toolbar form {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+.document-toolbar input {
+  width: 100%;
+  font-size: 11px;
+}
+.document-columns {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.document-list {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  overflow: auto;
+  background: #fafbfb;
+}
+.document-item {
+  display: block;
+  width: 100%;
+  padding: 15px 18px;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid #e4eaea;
+  background: transparent;
+}
+.document-item:hover,
+.document-item.selected {
+  background: #eaf1ee;
+}
+.document-item strong {
+  display: block;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.document-item small {
+  display: block;
+  font-size: 9px;
+  color: #839297;
+  margin-top: 4px;
+}
+.document-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+  overflow: auto;
+}
+.document-chunk {
+  padding: 20px;
+  margin-bottom: 15px;
+  background: white;
+  border: 1px solid #e0e7e5;
+  border-radius: 4px;
+}
+.document-chunk header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #8a989d;
+  margin-bottom: 13px;
+}
+.document-chunk pre {
+  font-size: 12px;
+}
+.document-chunk code {
+  display: block;
+  font-size: 9px;
+  color: #81928c;
+  margin-top: 15px;
+}
+.search-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0;
+  padding: 9px;
+  background: #f7faf9;
+  border: 1px solid var(--line);
+}
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+}
+.document-layout {
+  display: flex;
+  flex: 1;
+  min-height: 300px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.document-list > button {
+  display: flex;
+  gap: 9px;
+  text-align: left;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+.document-list > button.selected {
+  background: #e9f2ee;
+}
+.document-list strong {
+  font-size: 11px;
+  display: block;
+  overflow-wrap: anywhere;
+}
+.document-list small {
+  font-size: 9px;
+  display: block;
+  color: #86978f;
+  margin-top: 6px;
+  line-height: 1.7;
+}
+.document-chunk .eyebrow {
+  margin-bottom: 13px;
+}
+.document-chunk small {
+  display: block;
+  color: #80948a;
+  margin-top: 12px;
+}
+.upload-status {
+  background: #edf5f1;
+  padding: 9px 12px;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.semantic-query {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.semantic-query input {
+  flex: 1;
+  min-width: 0;
+}

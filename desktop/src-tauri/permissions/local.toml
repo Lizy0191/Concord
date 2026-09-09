@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-connection-info"
+description = "Retrieve only the local supervised sidecar connection."
+commands.allow = ["connection_info"]
+
+[[permission]]
+identifier = "allow-import-document"
+description = "Open an explicit native file dialog and import the selected bounded file."
+commands.allow = ["import_document"]

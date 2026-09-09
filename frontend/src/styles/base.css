@@ -1,0 +1,145 @@
+:root {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: #24313a;
+  background: #f2f4f5;
+  font-size: 13px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --line: #dfe5e7;
+  --muted: #77838b;
+  --ink: #203038;
+  --accent: #176c66;
+  --amber: #a3611b;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+button,
+input,
+textarea,
+select {
+  outline-offset: 3px;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #298b82;
+}
+input,
+textarea,
+select {
+  border: 1px solid #cfd8dc;
+  border-radius: 5px;
+  background: #fff;
+  padding: 8px 10px;
+  color: var(--ink);
+}
+textarea {
+  resize: vertical;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.65px;
+}
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+h3 {
+  font-size: 13px;
+  font-weight: 650;
+}
+small {
+  font-size: 11px;
+}
+code,
+.mono {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+button {
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+button svg {
+  flex-shrink: 0;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  line-height: 1.7;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+th {
+  text-align: left;
+  background: #f5f7f7;
+  color: #6a7880;
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 12px 14px;
+}
+td {
+  padding: 14px;
+  border-bottom: 1px solid #e7ebed;
+  vertical-align: top;
+}
+td small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+tbody tr:hover {
+  background: #f7faf9;
+}
+a {
+  color: var(--accent);
+}
+@media (max-width: 1150px) {
+  h1 {
+    font-size: 21px;
+  }
+}

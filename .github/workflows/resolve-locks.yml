@@ -1,0 +1,34 @@
+name: Resolve dependency locks for review
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: npm install --global pnpm@10.17.1
+      - run: rustup default stable
+      - run: python scripts/lock_dependencies.py
+      - run: python scripts/lock_dependencies.py --check
+      - name: Publish proposed lockfiles, never push changes automatically
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-locks-review-before-commit
+          path: |
+            uv.lock
+            frontend/pnpm-lock.yaml
+            desktop/src-tauri/Cargo.lock
+          if-no-files-found: error
+          retention-days: 14

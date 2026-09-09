@@ -1,0 +1,11 @@
+{
+  "name": "construction-coordination-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.17.1",
+  "scripts": {
+    "dev": "uv run --no-sync python ../scripts/build_desktop.py --dev",
+    "build": "uv run --no-sync python ../scripts/build_desktop.py",
+    "check": "cargo check --locked --manifest-path src-tauri/Cargo.toml"
+  }
+}

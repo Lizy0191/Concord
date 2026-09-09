@@ -1,0 +1,273 @@
+name: Verify source and integrations
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  prerequisites:
+    name: Verify committed dependency locks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: rustup default stable
+      - run: npm install --global pnpm@10.17.1
+      - run: python scripts/check_locks_present.py
+      - run: python scripts/lock_dependencies.py --check
+  backend:
+    needs: prerequisites
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: uv sync --frozen --group dev --extra telemetry --extra models
+      - run: uv run --frozen --no-sync pytest -q --junitxml=artifacts/backend.xml
+      - name: Required real DBOS tests may not skip
+        run: |
+          uv run --frozen --no-sync pytest -q backend/tests/integration/test_real_runtime_recovery.py -k dbos --junitxml=artifacts/dbos.xml
+          uv run --frozen --no-sync python scripts/assert_junit.py artifacts/dbos.xml
+      - name: API contract must match the source
+        run: |
+          uv run --frozen --no-sync python scripts/export_openapi.py
+          uv run --frozen --no-sync python scripts/bootstrap_types.py
+          git diff --exit-code -- frontend/openapi.json frontend/src/api/schema.ts
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-results
+          path: artifacts/*.xml
+          retention-days: 14
+  web:
+    needs: prerequisites
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: npm install --global pnpm@10.17.1
+      - run: uv sync --frozen --group dev --extra bim
+      - run: pnpm --dir frontend install --frozen-lockfile
+      - run: pnpm --dir frontend test:transport
+      - name: Production TypeScript client against a real DBOS API
+        run: uv run --frozen --no-sync python scripts/node_api_smoke.py --runtime dbos --output artifacts/node-api.json
+      - run: pnpm --dir frontend typecheck
+      - run: pnpm --dir frontend test
+      - run: pnpm --dir frontend build
+      - run: pnpm --dir frontend exec playwright install --with-deps chromium
+      - name: Real React and DBOS browser coordination
+        run: pnpm --dir frontend e2e
+        env:
+          CCA_E2E_RUNTIME: dbos
+          CCA_E2E_PYTHON: ${{ github.workspace }}/.venv/bin/python
+      - name: Generate original IFC geometry through the real IfcOpenShell SDK
+        run: uv run --frozen --no-sync python scripts/generate_ifc_fixture.py
+      - name: Real IFC WebGL, WASM, fragments worker and durable import
+        run: pnpm --dir frontend e2e:ifc
+        env:
+          CCA_E2E_RUNTIME: dbos
+          CCA_E2E_PYTHON: ${{ github.workspace }}/.venv/bin/python
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: browser-results
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            frontend/playwright-report-ifc/
+            frontend/test-results-ifc/
+            artifacts/node-api.json
+          retention-days: 14
+  quality:
+    needs: prerequisites
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: uv sync --frozen --group dev --all-extras
+      - run: npm install --global pnpm@10.17.1
+      - run: pnpm --dir frontend install --frozen-lockfile
+      - run: uv run --frozen --no-sync ruff check backend scripts
+      - run: uv run --frozen --no-sync pyright
+      - run: pnpm --dir frontend lint
+  storage-services:
+    needs: prerequisites
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg16
+        env:
+          POSTGRES_USER: cca_local_test
+          POSTGRES_PASSWORD: cca-local-test
+          POSTGRES_DB: postgres
+        ports:
+          - 15432:5432
+        options: >-
+          --health-cmd "pg_isready -U cca_local_test -d postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: uv sync --frozen --group dev --extra storage --extra server
+      - name: Ephemeral loopback-only S3 compatibility fixture (not a production deployment)
+        run: |
+          docker run --detach --name cca-minio --publish 127.0.0.1:19000:9000 \
+            --env MINIO_ROOT_USER=cca-local-test --env MINIO_ROOT_PASSWORD=cca-local-test-secret \
+            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:19000/minio/health/live; then exit 0; fi
+            sleep 1
+          done
+          docker logs cca-minio
+          exit 1
+      - name: Real SDK/service tests must execute, not skip
+        env:
+          CCA_TEST_DATABASE_URL: postgresql://cca_local_test:cca-local-test@127.0.0.1:15432/postgres
+          CCA_TEST_S3_ENDPOINT: 127.0.0.1:19000
+        run: |
+          uv run --frozen --no-sync pytest -q backend/tests/integration/test_storage_services.py --junitxml=artifacts/storage.xml
+          uv run --frozen --no-sync python scripts/assert_junit.py artifacts/storage.xml
+      - name: Remove only this job's object-storage container
+        if: always()
+        run: docker rm --force cca-minio || true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: storage-results
+          path: artifacts/*.xml
+          retention-days: 14
+
+  sdk-runtimes:
+    needs: prerequisites
+    name: Required ${{ matrix.capability }} verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - capability: pydantic-ai-sdk
+            extra: models
+            test_file: backend/tests/integration/test_pydantic_ai_sdk.py
+            selection: real
+          - capability: ortools
+            extra: optimization
+            test_file: backend/tests/integration/test_optional_local_sdks.py
+            selection: ortools
+          - capability: ifcopenshell
+            extra: bim
+            test_file: backend/tests/integration/test_optional_local_sdks.py
+            selection: ifc
+          - capability: temporal
+            extra: temporal
+            test_file: backend/tests/integration/test_real_runtime_recovery.py
+            selection: temporal
+          - capability: opentelemetry
+            extra: telemetry
+            test_file: backend/tests/integration/test_otlp_http.py
+            selection: real
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: uv sync --frozen --group dev --extra ${{ matrix.extra }}
+      - name: Provision pinned Temporal CLI for real recovery
+        if: matrix.capability == 'temporal'
+        env:
+          TEMPORAL_CLI_VERSION: '1.5.0'
+        run: |
+          destination="$RUNNER_TEMP/temporal-cli"
+          mkdir -p "$destination"
+          curl --fail --location --retry 3 --connect-timeout 20 --max-time 120 \
+            "https://temporal.download/cli/archive/v${TEMPORAL_CLI_VERSION}?platform=linux&arch=amd64" \
+            --output "$destination/temporal.tar.gz"
+          tar -xzf "$destination/temporal.tar.gz" -C "$destination"
+          temporal_cli="$destination/temporal"
+          test -x "$temporal_cli"
+          "$temporal_cli" --version
+          echo "CCA_TEST_TEMPORAL_SERVER_BINARY=$temporal_cli" >> "$GITHUB_ENV"
+      - name: Real capability tests must execute without skips
+        env:
+          CCA_TEST_TEMPORAL_LOCAL: '1'
+        run: |
+          uv run --frozen --no-sync pytest -q ${{ matrix.test_file }} -k '${{ matrix.selection }}' --junitxml=artifacts/${{ matrix.capability }}.xml
+          uv run --frozen --no-sync python scripts/assert_junit.py artifacts/${{ matrix.capability }}.xml
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ${{ matrix.capability }}-results
+          path: artifacts/*.xml
+          retention-days: 14
+  documents:
+    needs: prerequisites
+    name: Required Docling HTML and offline PDF verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DOCLING_ARTIFACTS_PATH: ${{ github.workspace }}/.verification-work/docling-models
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.12'
+      - run: uv sync --frozen --group dev --extra documents
+      - name: Explicit setup downloads public layout/table weights only
+        run: uv run --frozen --no-sync python scripts/prefetch_docling_models.py --output "$DOCLING_ARTIFACTS_PATH"
+      - name: Real HTML and multipage PDF provenance; no deferred model downloads
+        env:
+          HF_HUB_OFFLINE: '1'
+          TRANSFORMERS_OFFLINE: '1'
+        run: |
+          uv run --frozen --no-sync pytest -q backend/tests/integration/test_optional_local_sdks.py -k docling --junitxml=artifacts/docling.xml
+          uv run --frozen --no-sync python scripts/assert_junit.py artifacts/docling.xml
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: docling-results
+          path: artifacts/*.xml
+          retention-days: 14
