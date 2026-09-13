@@ -1,4 +1,5 @@
 from app.adapters.demo_ids import DUCT_GUID, TRAY_GUID, WALL_GUID
+from app.domain.errors import DomainError
 from app.domain.models import Area, Project, ProjectState, SourceRevision, WorkPackage
 from app.ports.providers import BIMElement
 
@@ -73,15 +74,25 @@ def demo_state(version: int = 1) -> ProjectState:
 
 
 class StructuredBIMProvider:
-    def __init__(self) -> None:
+    def __init__(self, revision: str = "V16") -> None:
+        if revision not in {"V16", "V17"}:
+            raise DomainError("Structured BIM fixture supports only V16 or V17")
+        changed = revision == "V17"
         self.items = [
             BIMElement(
                 id=WALL_GUID,
                 name="East core wall",
                 type="IfcWall",
                 storey="L02-E",
-                revision="V16",
-                properties={"FireRating": "120 min", "Width": 0.2},
+                space="L02-E-ZONE",
+                revision=revision,
+                properties={
+                    "FireRating": "120 min",
+                    "Width": 0.2,
+                    "Easting": 0.6 if changed else 0.0,
+                    "ChangeStatus": "changed" if changed else "baseline",
+                    "WorkPackageIds": ("WP-100", "WP-200"),
+                },
                 related_ids=(DUCT_GUID,),
             ),
             BIMElement(
@@ -89,8 +100,14 @@ class StructuredBIMProvider:
                 name="Supply duct E-01",
                 type="IfcDuctSegment",
                 storey="L02-E",
-                revision="V16",
-                properties={"Width": 0.6, "Height": 0.4},
+                space="L02-E-ZONE",
+                revision=revision,
+                properties={
+                    "Width": 0.6,
+                    "Height": 0.4,
+                    "ChangeStatus": "affected" if changed else "baseline",
+                    "WorkPackageIds": ("WP-200",),
+                },
                 related_ids=(WALL_GUID,),
             ),
             BIMElement(
@@ -98,8 +115,13 @@ class StructuredBIMProvider:
                 name="Cable tray E-01",
                 type="IfcCableCarrierSegment",
                 storey="L03-E",
-                revision="V16",
-                properties={"Width": 0.3},
+                space="L03-E-ZONE",
+                revision=revision,
+                properties={
+                    "Width": 0.3,
+                    "ChangeStatus": "unchanged" if changed else "baseline",
+                    "WorkPackageIds": ("WP-300",),
+                },
             ),
         ]
 

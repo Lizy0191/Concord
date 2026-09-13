@@ -42,15 +42,19 @@ def test_real_ifc_fixture_queries_and_geometry(tmp_path):
     import ifcopenshell.geom as ifc_geom
     import ifcopenshell.validate as ifc_validate
 
-    path = generate_ifc_fixture(tmp_path / "fixture.ifc")
-    provider = IfcOpenShellBIMProvider(path)
+    v16_path = generate_ifc_fixture(tmp_path / "fixture-v16.ifc", revision="V16")
+    v17_path = generate_ifc_fixture(tmp_path / "fixture-v17.ifc", revision="V17")
+    provider = IfcOpenShellBIMProvider(v16_path)
     elements = provider.elements()
     assert {e.id for e in elements} == {WALL_GUID, DUCT_GUID, TRAY_GUID}
     assert {e.id for e in provider.elements(location="L02-E")} == {WALL_GUID, DUCT_GUID}
     assert provider.elements(element_id=DUCT_GUID)[0].type == "IfcDuctSegment"
     assert len(provider.by_property("CCA_Coordination", "DrawingRevision", "V16")) == 3
-    assert all(e.revision == hashlib.sha256(path.read_bytes()).hexdigest() for e in elements)
-    assert {e.id for e in LocalIFCImporter().parse(path.read_bytes())} == {e.id for e in elements}
+    assert {e.id for e in provider.elements(location="L02-E-ZONE")} == {WALL_GUID, DUCT_GUID}
+    assert all(e.revision == hashlib.sha256(v16_path.read_bytes()).hexdigest() for e in elements)
+    assert {e.id for e in LocalIFCImporter().parse(v16_path.read_bytes())} == {
+        e.id for e in elements
+    }
     # Shared contract: stable IDs, types and spatial locations, not identical property
     # serialization.
     structured = {e.id: e for e in StructuredBIMProvider().elements()}
@@ -59,12 +63,22 @@ def test_real_ifc_fixture_queries_and_geometry(tmp_path):
             structured[element.id].type,
             structured[element.id].storey,
         )
-    model = ifcopenshell.open(str(path))
-    logger = ifcopenshell.validate.json_logger()
-    ifc_validate.validate(model, logger)
-    assert not logger.statements, logger.statements
-    shape = ifc_geom.create_shape(ifc_geom.settings(), model.by_guid(WALL_GUID))
-    assert len(shape.geometry.verts) > 0
+    models = [ifcopenshell.open(str(path)) for path in (v16_path, v17_path)]
+    for model in models:
+        logger = ifcopenshell.validate.json_logger()
+        ifc_validate.validate(model, logger)
+        assert not logger.statements, logger.statements
+        shape = ifc_geom.create_shape(ifc_geom.settings(), model.by_guid(WALL_GUID))
+        assert len(shape.geometry.verts) > 0
+    v17_provider = IfcOpenShellBIMProvider(v17_path)
+    changed_wall = v17_provider.elements(element_id=WALL_GUID)[0]
+    assert changed_wall.space == "L02-E-ZONE"
+    assert changed_wall.properties["CCA_Coordination"]["DrawingRevision"] == "V17"
+    assert changed_wall.properties["CCA_Coordination"]["ChangeStatus"] == "changed"
+    assert (
+        models[1].by_guid(WALL_GUID).ObjectPlacement.RelativePlacement.Location.Coordinates[0]
+        == 0.6
+    )
 
 
 def test_real_ifc_rejects_malformed_input(tmp_path):

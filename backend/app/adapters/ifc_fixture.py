@@ -7,11 +7,13 @@ these exact elements in the browser viewer.
 
 from pathlib import Path
 
-from app.adapters.demo_ids import DUCT_GUID, TRAY_GUID, WALL_GUID
-from app.domain.errors import CapabilityUnavailable
+from app.adapters.demo_ids import DUCT_GUID, L02_SPACE_GUID, L03_SPACE_GUID, TRAY_GUID, WALL_GUID
+from app.domain.errors import CapabilityUnavailable, DomainError
 
 
-def generate_ifc_fixture(destination: Path) -> Path:
+def generate_ifc_fixture(destination: Path, revision: str = "V16") -> Path:
+    if revision not in {"V16", "V17"}:
+        raise DomainError("IFC fixture supports only V16 or V17")
     try:
         import ifcopenshell.api
         import numpy as np
@@ -48,6 +50,13 @@ def generate_ifc_fixture(destination: Path) -> Path:
         run("aggregate.assign_object", model, products=[floor], relating_object=building)
         floors[name] = floor
 
+    spaces = {}
+    for floor_id, guid in (("L02-E", L02_SPACE_GUID), ("L03-E", L03_SPACE_GUID)):
+        space = run("root.create_entity", model, ifc_class="IfcSpace", name=f"{floor_id}-ZONE")
+        space.GlobalId = guid
+        run("aggregate.assign_object", model, products=[space], relating_object=floors[floor_id])
+        spaces[floor_id] = space
+
     specs = (
         (WALL_GUID, "IfcWall", "East core wall", "L02-E", (8.0, 0.2, 3.2), (0, 0, 3.6)),
         (DUCT_GUID, "IfcDuctSegment", "Supply duct E-01", "L02-E", (6.0, 0.6, 0.4), (1, 0.8, 6.2)),
@@ -67,7 +76,7 @@ def generate_ifc_fixture(destination: Path) -> Path:
             "spatial.assign_container",
             model,
             products=[element],
-            relating_structure=floors[floor_id],
+            relating_structure=spaces[floor_id],
         )
         # The representation is a simple swept rectangular prism, not detailed fabrication geometry.
         length, thickness, height = dimensions
@@ -82,6 +91,8 @@ def generate_ifc_fixture(destination: Path) -> Path:
         run("geometry.assign_representation", model, product=element, representation=representation)
         matrix = np.eye(4)
         matrix[:3, 3] = position
+        if revision == "V17" and guid == WALL_GUID:
+            matrix[0, 3] += 0.6
         run("geometry.edit_object_placement", model, product=element, matrix=matrix, is_si=True)
         pset = run("pset.add_pset", model, product=element, name="CCA_Coordination")
         run(
@@ -89,9 +100,26 @@ def generate_ifc_fixture(destination: Path) -> Path:
             model,
             pset=pset,
             properties={
-                "DrawingRevision": "V16",
+                "DrawingRevision": revision,
                 "Synthetic": True,
                 "Area": floor_id,
+                "Space": f"{floor_id}-ZONE",
+                "ChangeStatus": (
+                    "changed"
+                    if revision == "V17" and guid == WALL_GUID
+                    else "affected"
+                    if revision == "V17" and guid == DUCT_GUID
+                    else "unchanged"
+                    if revision == "V17"
+                    else "baseline"
+                ),
+                "WorkPackageIds": (
+                    "WP-100,WP-200"
+                    if guid == WALL_GUID
+                    else "WP-200"
+                    if guid == DUCT_GUID
+                    else "WP-300"
+                ),
                 "Width": thickness,
                 "Height": height,
             },
