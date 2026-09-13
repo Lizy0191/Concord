@@ -75,6 +75,10 @@ def test_real_ifc_fixture_queries_and_geometry(tmp_path):
     assert changed_wall.space == "L02-E-ZONE"
     assert changed_wall.properties["CCA_Coordination"]["DrawingRevision"] == "V17"
     assert changed_wall.properties["CCA_Coordination"]["ChangeStatus"] == "changed"
+    changed_duct = v17_provider.elements(element_id=DUCT_GUID)[0]
+    assert changed_duct.properties["CCA_Coordination"]["ChangeStatus"] == "affected"
+    assert changed_wall.properties["CCA_Coordination"]["WorkPackageIds"] == "WP-100,WP-200"
+    assert changed_duct.properties["CCA_Coordination"]["WorkPackageIds"] == "WP-200"
     assert (
         models[1].by_guid(WALL_GUID).ObjectPlacement.RelativePlacement.Location.Coordinates[0]
         == 0.6
