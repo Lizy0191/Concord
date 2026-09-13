@@ -14,6 +14,8 @@ This uses IfcOpenShell's actual authoring API to create a project/site/building,
 two storeys and spaces, a wall, a duct, a cable tray, swept geometry, placements,
 and property sets. Element GlobalIds match `backend/app/adapters/demo_ids.py`. The
 outputs are `fixtures/harbor-east-v16.ifc` and `fixtures/harbor-east-v17.ifc`.
+For compatibility with the existing WebGL end-to-end test, the generator also writes
+the V16 baseline to `fixtures/harbor-east.ifc`.
 V17 moves the wall 0.6 metres east and marks its related duct as affected while
 preserving stable identifiers, locations, work-package links, and source revisions.
 Import either revision in the BIM workspace, then select the WP-200 work package or
