@@ -1,216 +1,482 @@
+/*
+ * Shared objects: labels, controls, chrome rows, and the states a pane falls
+ * back to. Everything here is a thing that appears in more than one workspace.
+ */
+
+/* Supporting label: secondary text, not a visual device. */
 .eyebrow {
-  font-size: 9px;
-  letter-spacing: 1.7px;
-  font-weight: 700;
-  color: var(--muted);
+  font-size: var(--fs-label);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: var(--muted-2);
 }
+
+/*
+ * The technical identifier role: a GUID, a SHA, an IFC id, a revision. One
+ * treatment everywhere it appears, so an engineer learns to recognise the register
+ * once and scan it identically in the sidebar, the property sheet, the evidence
+ * gutter and the Inspector.
+ *
+ * The face comes from base.css (one mono role, asserted by the design contract).
+ * What is added here is the two things that make a column of identifiers
+ * comparable: figures that line up, and a hair of negative tracking, because a
+ * monospace face at these sizes reads looser than the prose beside it and
+ * identifiers are scanned rather than read.
+ */
+.mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/*
+ * Reserved for genuinely global failures.
+ *
+ * The band states the failure once, in its fill. It used to close its own bottom
+ * edge with a rule in the same amber as its text, which was the third signal for
+ * one fact: the fill already separates the band from the chrome above and below it
+ * far more strongly than a 1px line ever could, so the rule was the weaker of two
+ * statements of the same thing (base.css rule 1: a line is spent where it is
+ * content or a control boundary, never to prove a region owns its area).
+ */
 .alert {
-  padding: 10px 25px;
-  color: #8c5020;
-  background: #fff4e7;
+  padding: 8px 20px;
+  color: var(--warning);
+  background: var(--warning-muted);
   display: flex;
-  gap: 10px;
+  gap: var(--space-2);
   align-items: center;
-  font-size: 11px;
-  border-bottom: 1px solid #efd9bd;
+  font-size: var(--fs-meta);
 }
 .alert button {
-  border: none;
+  border: 0;
   background: none;
   margin-left: auto;
+  color: inherit;
+  font-size: var(--fs-section);
+  line-height: 1;
 }
 .loading-view,
 .empty-state {
-  padding: 35px;
+  padding: 28px;
   color: var(--muted);
-  line-height: 1.8;
-  font-size: 12px;
+  line-height: 1.7;
+  font-size: var(--fs-body);
 }
 .loading-view {
   display: grid;
   place-items: center;
   height: 100%;
 }
+
+/*
+ * A peer label: a tinted surface with a small radius, never a filled capsule and
+ * never a hairline outline.
+ *
+ * It used to be the only fully round object in the application - a 999px pill
+ * inside a shell of right angles - which is what made the radius strategy read
+ * as inconsistent rather than deliberate. It is also the one place a 1px outline
+ * was doing a tag's job: at a rule tone on a light plane the outline sat below
+ * the threshold where it reads as an edge, so the tag looked like text that had
+ * been accidentally underlined by a rule. A tint states the same thing with
+ * area.
+ *
+ * The label tier's weight is 500 rather than 600: a tag is an annotation beside
+ * the row title, and at 600 it out-ranked the value it was annotating - which is
+ * how a sidebar of four work packages read as four shouts.
+ */
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  padding: 3px 7px;
-  line-height: 1.25;
-  border-radius: 3px;
-  border: 1px solid #d9e3df;
-  background: #edf5f1;
-  color: #427668;
-  font-weight: 650;
-  letter-spacing: 0.45px;
+  height: 19px;
+  padding: 0 6px;
+  font-size: var(--fs-label);
+  font-weight: 500;
+  line-height: 1;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  color: var(--ink-2);
   white-space: nowrap;
 }
-.status-blocked,
-.status-waiting_approval,
-.status-stale,
-.status-unhealthy,
-.status-failed {
-  background: #fbf0df;
-  border-color: #efdcba;
-  color: #986323;
+/*
+ * A status tag states its state once, in its text.
+ *
+ * The blocked variant used to take a warm filled surface as well, and inside the
+ * sidebar's selected row that chip became the loudest object in a 232px column:
+ * a work package answered "am I current?" in a slate tint and "am I blocked?" in
+ * a cream rectangle at the same time, and neither read as the first answer. The
+ * exception colour is now spent on the word and nothing else, while the tag keeps
+ * the neutral resting surface every other status in the product has - so a blocked
+ * badge is still a tag (area, not an outline) and still legible at a glance, but
+ * selection outranks it and the two semantics never share a colour.
+ */
+.status-blocked {
+  color: var(--warning);
+  background: var(--hover);
 }
-.status-running,
-.status-queued {
-  background: #eaf1f7;
-  border-color: #d0dfe9;
-  color: #4d7190;
+.status-ready,
+.status-neutral {
+  color: var(--ink-2);
+  background: var(--hover);
 }
-.status-unavailable_dependency,
-.status-unavailable_credential,
-.status-available_disabled,
-.status-cancelled,
-.status-expired {
-  background: #f1f3f4;
-  border-color: #e1e6e8;
-  color: #849199;
-}
+
 .view-heading {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 19px;
-  gap: 14px;
+  margin-bottom: var(--space-4);
+  gap: var(--space-4);
 }
 .view-heading p,
 .table-view > p,
 .capability-view > p {
-  font-size: 11px;
-  color: #7e8d92;
-  line-height: 1.7;
-  margin-top: 7px;
+  font-size: var(--fs-meta);
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 6px;
 }
+/*
+ * The import control is a `<label>` wrapping a file input, so it is not a
+ * `<button>` and the shared control transition in base.css does not reach it: it
+ * used to answer the pointer by switching surface in a single frame while every
+ * button beside it faded over 120ms. Same properties, same curve, same step - and,
+ * because it stands in the same row as the secondary buttons, the same resting
+ * surface and the same boundary (`.button-secondary` below states why a secondary
+ * control rests on a neutral rather than on white).
+ */
 .import-button {
   display: inline-flex;
   cursor: pointer;
   align-items: center;
-  gap: 5px;
-  padding: 7px 10px;
-  border: 1px solid #cfdcd7;
-  border-radius: 4px;
-  background: white;
-  color: #516c63;
-  font-size: 10px;
+  gap: var(--icon-gap);
+  height: var(--control-h-sm);
+  padding: 0 9px;
+  border: 1px solid var(--line-control-soft);
+  border-radius: var(--radius-md);
+  background: var(--hover);
+  color: var(--ink-2);
+  font-size: var(--fs-action);
+  font-weight: 500;
+  transition:
+    background var(--motion-fast) var(--ease),
+    border-color var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease);
 }
-.import-button input {
-  display: none;
+.import-button:hover {
+  background: var(--hover-strong);
 }
-/* Shared primitives and semantic workspace surfaces. */
+
+/*
+ * Controls. A control is identified by its own boundary and its surface, never
+ * by a shadow: a drop shadow under a button is the most reliable tell of a
+ * generated interface, and it also made a secondary control compete with a
+ * floating surface for the same signal.
+ *
+ * The secondary boundary is `--line-control-soft`: these controls only ever sit
+ * on a light plane, where the quieter token still clears 3:1 (base.css states the
+ * placement rule, and the token test holds it). The primary control never needed
+ * a boundary at all - its fill is the boundary.
+ *
+ * The label is 500, not 600. A committed action is identified by its fill, and
+ * at 600 every button in the product competed with the row titles beside it.
+ */
+/*
+ * An icon-only control: a square target for an action whose meaning is a
+ * universal chrome mark - collapse, expand, close, more. It is the same quiet
+ * object as `.quiet-trigger`, so a sidebar toggle and a "more" menu in one chrome
+ * band are one control in two shapes, and it is a real 25px target rather than a
+ * bare glyph.
+ *
+ * The rule for this class is absolute, because a mark with no word under it is
+ * the one control in a product that can be undecodable: it carries an accessible
+ * name *and* a tooltip stating the same action, and it is reachable by Tab and
+ * answered by the shared focus ring like any other control
+ * (frontend/src/components/ui/AppTooltip.tsx). A labelled control gets no
+ * tooltip - a tooltip that repeats a visible word is noise on a control that was
+ * never ambiguous.
+ */
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+}
+.icon-button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: var(--icon-gap);
+  height: var(--control-h);
+  padding: 0 11px;
   border: 1px solid transparent;
-  border-radius: 5px;
-  padding: 8px 12px;
-  font-weight: 550;
-  font-size: 11px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-action);
+  font-weight: 500;
   white-space: nowrap;
 }
+.button svg {
+  opacity: 0.9;
+}
 .button-primary {
-  background: #176c66;
-  color: white;
-  border-color: #176c66;
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
 }
 .button-primary:hover {
-  background: #115a54;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
+/*
+ * The secondary role: a quiet local surface, closed by the soft boundary.
+ *
+ * It used to rest on plain white, and on a chrome band white is 1.09:1 - so the
+ * control's own fill said nothing at all and its 1px outline carried the entire
+ * object. Every toolbar therefore read as a row of outlined rectangles, which is
+ * the wireframe register this pass is removing, and the outline could not simply
+ * be lightened to fix it: 3:1 is what identifies a control, and
+ * `--line-control-soft` is already sitting on that floor on the darkest plane it
+ * is allowed on.
+ *
+ * So the fill steps instead of the boundary moving. Resting on the same neutral
+ * the pointer uses, the control is a surface first and a boundary second - the
+ * grammar every other object in this product already follows - and the pointer
+ * darkens it by one step. The boundary stays exactly where it was, because
+ * affordance is not what this pass is allowed to spend: the outline is quieter to
+ * the eye because it is no longer the only thing saying "this is a control", not
+ * because it has been weakened.
+ */
 .button-secondary {
-  background: white;
-  color: #405961;
-  border-color: #ccd9dc;
+  background: var(--hover);
+  color: var(--ink-2);
+  border-color: var(--line-control-soft);
 }
 .button-secondary:hover {
-  background: #eef4f3;
+  background: var(--hover-strong);
 }
 .button-ghost {
   background: transparent;
-  color: #567079;
+  color: var(--ink-2);
+}
+.button-ghost:hover {
+  background: var(--hover);
 }
 .button-danger {
-  background: #fff3ef;
-  color: #944b38;
-  border-color: #ddaa99;
+  background: var(--surface);
+  color: var(--danger-fg);
+  border-color: var(--line-control-soft);
+}
+.button-danger:hover {
+  background: var(--danger-soft);
 }
 .button-sm {
-  padding: 5px 8px;
-  font-size: 10px;
+  height: var(--control-h-sm);
+  padding: 0 9px;
+}
+/*
+ * Integrated view toolbar: one chrome row that owns a primary view's title, its
+ * inline controls, and its actions. Documents, BIM, and the site workspace share
+ * it so the working views read as the same application rather than as three
+ * embedded pages. It is a chrome band, so it is closed by the plane step to the
+ * surface below it rather than by a rule.
+ */
+.view-toolbar,
+.viewer-toolbar {
+  flex-shrink: 0;
+  /* a structural chrome band: square by declaration, not by omission */
+  border-radius: var(--radius-none);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  /* a generous column gap, because the band's children are three different kinds
+     of thing - a view's own name, the view's inline controls, and its actions -
+     and 16px between them read as one crowded row rather than as three groups */
+  gap: var(--space-2) var(--space-5);
+  min-height: 42px;
+  padding: 6px 18px;
+  background: var(--surface-chrome);
+}
+.view-toolbar > h2,
+.viewer-toolbar > h2 {
+  font-size: var(--fs-title);
+}
+.view-toolbar-note,
+.viewer-toolbar-note {
+  min-width: 0;
+  flex: 1 1 220px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--fs-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-toolbar-actions,
+.viewer-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+/* a list-level empty state, anchored to the top of its own scroll region */
+.pane-empty {
+  padding: var(--space-3) var(--space-4) 0;
+}
+/*
+ * A pane-level empty state: the pane says what it is waiting for, at its own
+ * instruction tier, in two levels rather than one sentence.
+ *
+ * It was a tinted, rounded placeholder in the middle of the pane, which is how a
+ * component library reports "no data" - inside a workspace pane that is the wrong
+ * register twice over. The empty surface is the workspace itself, so a card drawn
+ * on it becomes a second, competing object; and a pane that has nothing selected
+ * is waiting for a choice rather than reporting a failure.
+ *
+ * The second level is the repair for what replaced it. One line at the pane's own
+ * origin read as a workspace that had not finished loading - a caption in the
+ * corner where the first value would be - so the instruction now spends its two
+ * tiers on the two things it has to say (what to do, and what that gets you) and
+ * lets the pane decide where in itself it sits (styles/viewers.css owns that for
+ * the property sheet; a list-level empty state anchors to its own first row).
+ */
+.empty-pane {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: var(--fs-action);
+  line-height: 1.6;
+}
+.empty-pane svg {
+  flex-shrink: 0;
+  color: var(--muted-2);
+}
+.empty-pane strong {
+  display: block;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.empty-pane small {
+  display: block;
+  color: var(--muted);
 }
 .content-view {
-  padding: 22px;
+  padding: var(--space-5) var(--space-6);
   overflow: auto;
   min-height: 0;
 }
 .content-view > .muted {
   line-height: 1.7;
-  margin-bottom: 14px;
+  margin-bottom: var(--space-3);
 }
+/*
+ * A text action is text. It answers with colour and a hairline underline, never
+ * with a filled surface: a small grey rectangle on hover makes an inline action
+ * read as a miniature toolbar button.
+ */
 .text-button {
   border: 0;
   background: none;
   padding: 0;
-  color: #176c66;
+  color: var(--ink-2);
+  font-size: var(--fs-action);
   text-align: left;
+  text-decoration: none;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.text-button:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 .panel-heading,
 .timeline-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 13px;
-}
-.panel-heading {
-  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 .count {
   margin-left: auto;
-  color: #859399;
-  font-size: 10px;
+  color: var(--muted-2);
+  font-size: var(--fs-label);
+  font-weight: 500;
 }
 .quiet-message {
-  font-size: 11px;
-  color: #87979d;
+  font-size: var(--fs-meta);
+  color: var(--muted);
   line-height: 1.7;
 }
-.status-neutral {
-  color: #796d4f;
-  background: #f7f2e5;
-  border-color: #e7dcc2;
-}
-.status-ready {
-  color: #39725f;
-  background: #edf6f0;
-  border-color: #b9d6c7;
-}
-.status-dot {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  background: currentColor;
-  border-radius: 50%;
-  margin-right: 5px;
-}
 .content-view .audit-list {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-4);
 }
 .content-view > .view-heading:not(:first-child) {
-  margin-top: 25px;
+  margin-top: var(--space-5);
 }
 .consent {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 11px;
+  gap: var(--space-2);
+  font-size: var(--fs-meta);
   line-height: 1.7;
-  margin: 14px 0;
-  color: #74878b;
+  margin: var(--space-3) 0;
+  color: var(--muted);
 }
 .consent input {
-  margin-top: 4px;
+  margin-top: 3px;
+}
+
+/*
+ * A disclosure: a quiet control that opens a block of supporting values. It
+ * replaces the native <details> element everywhere the primary workspace uses
+ * one - the platform triangle, its 13px inset, and its behaviour under a
+ * different font are the last pieces of the operating system's own control
+ * language that were still showing through the product.
+ */
+.disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icon-gap);
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: var(--fs-meta);
+}
+.disclosure:hover {
+  color: var(--ink);
+}
+.disclosure svg {
+  transition: transform var(--motion-fast) var(--ease);
+}
+.disclosure[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+/*
+ * The disclosure body is the animated box, and its gap lives *inside* that box.
+ *
+ * A margin on the box itself would arrive at full size on the first frame of an
+ * expansion whose height is still zero, which is the 12px jump that makes a small
+ * accordion look broken. Padding inside the measured height expands with it, so
+ * the same 12px reads as one continuous opening - and the box clips its own
+ * content while it is shorter than the content, which is what the expansion is.
+ *
+ * Nothing disclosed in this product holds a focusable control (a fact list, a raw
+ * property record), so clipping cannot cut a focus ring: see
+ * frontend/src/components/ui/AppDisclosure.tsx, which is where a future disclosed
+ * *form* would have to be reconsidered.
+ */
+.disclosure-body {
+  overflow: hidden;
+}
+.disclosure-body > .disclosure-inner {
+  padding-top: var(--space-3);
 }

@@ -1,254 +1,309 @@
+/*
+ * Detail pane calibration: the selected object's own pane, not a popover and not
+ * another grey column.
+ *
+ * The pane states itself three ways, which is what "pane identity" means here:
+ *
+ * - a recessed surface (`--surface-detail`) beside the work plane, a 1.18:1 step
+ *   rather than the 1.08:1 it used to be - it used to sit *darker* than the work
+ *   plane by about the same amount as chrome did, so it read as one more grey
+ *   band rather than as the surface being read;
+ * - a chrome header band owning the object reference, the detail switch, and the
+ *   close control, so the pane is named rather than merely bounded;
+ * - its own scroll, with the header fixed above it.
+ *
+ * It is now the *only* large surface on that plane, which is what the plane is
+ * for. The local object lists - the BIM element browser and the document source
+ * list - used to share it, so the recessed column inside a workspace and the docked
+ * contextual pane at the edge of the window were the same material, and the window
+ * carried three similar grey columns around one work plane. Those lists moved one
+ * step lighter (frontend/src/styles/viewers.css, frontend/src/styles/features/
+ * documents.css), which leaves the ladder doing exactly what it was ordered to do:
+ * the darkest large plane is persistent navigation, the next is this contextual
+ * pane, the next is a local object list, and the lightest is the work surface. The
+ * Inspector keeps the chrome header band over its recessed body, so its identity is
+ * unchanged by the move - it is the pane that owns the detail well now.
+ *
+ * Its local navigation is quiet text over an accent rail, and it never repeats
+ * workspace status: the workspace owns the story, this pane owns the selected
+ * detail. Nothing here needs a hairline - the plane step, the header
+ * band, and the spacing do the separating.
+ *
+ * The pane's width, its left edge, and the divider belong to the resizable split
+ * that hosts it (frontend/src/layout/PaneSplit.tsx), and its arrival is animated
+ * from frontend/src/motion for the same reason: the content moves, not the
+ * column.
+ */
+.inspector-pane {
+  background: var(--surface-detail);
+}
 .inspector {
-  width: 315px;
-  flex-shrink: 0;
-  background: white;
-  border-left: 1px solid var(--line);
-  overflow: auto;
-  padding: 20px 19px;
-}
-.inspector-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+/*
+ * The pane's own header band. The selector carries `.pane-header` so the padding
+ * below is not outranked by the shared `.pane-header.is-stacked` rule this element
+ * also matches (layout.css): a stated value a shared selector silently overrides
+ * is a comment, not a design. The right inset is one step tighter than the left
+ * because the close control is a 26px square and reads as its own inset.
+ */
+.pane-header.inspector-header {
+  padding: 6px 8px 6px 10px;
+}
+/*
+ * The pane's own name: the work package this pane is reporting on. Scoped under
+ * `.inspector-header` so it is not demoted to the label tier by the shared
+ * `.pane-header .mono` rule, which quiets a right-edge identifier - here the
+ * identifier is the pane's subject, so it ranks at the meta tier in ink-2, above
+ * the quiet switch labels beneath it.
+ */
+.inspector-header .inspector-scope {
+  color: var(--ink-2);
+  font-size: var(--fs-meta);
+}
+/*
+ * The close control is an `.icon-button`, which now lives in components.css: it
+ * stopped being this pane's own object when the dialog header and the window
+ * chrome adopted it, and a control shared by three regions cannot be owned by a
+ * fourth's stylesheet.
+ */
+
+/*
+ * The detail switch: a segmented row of the pane's own three details. Its active
+ * item states position the way the workspace tab strip does - full ink at 600
+ * over a 2px accent rail - because it is the same "which view am I in" question
+ * asked one plane down, on the same chrome band where a 10% accent tint renders
+ * as a grey box rather than as a slate one. That is exactly why the tab strip
+ * left the tint; the tint stays the grammar for a selected *row*, which this is
+ * not. Text-only hover for the same reason: the rail carries position, so a
+ * hover needs no surface of its own, and the count badge stays at the label tier
+ * beside the active label so it still reads with no tint behind it.
+ */
+.inspector-switch {
+  display: flex;
+  gap: 2px;
+}
+.inspector-switch button {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 17px;
+  gap: 5px;
+  height: 23px;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  transition: color var(--motion-fast) var(--ease);
 }
-.inspector-header h2 {
-  font-size: 12px;
+.inspector-switch button:hover {
+  color: var(--ink-2);
 }
-.inspector section {
-  border-top: 1px solid var(--line);
-  padding-top: 15px;
-  margin-top: 17px;
+.inspector-switch button.active {
+  color: var(--ink);
+  font-weight: 600;
 }
-.inspector .eyebrow {
-  margin-bottom: 10px;
+/* the rail underlines the label, not the target: its inset matches the button's
+   own horizontal padding, the way the tab strip's rail does */
+.inspector-switch button.active::after {
+  content: "";
+  position: absolute;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
 }
-.inspector h3 {
-  font-size: 12px;
-  line-height: 1.5;
-  margin-bottom: 7px;
-}
-.inspector p {
-  font-size: 11px;
-  color: #76838a;
-  line-height: 1.65;
-}
-.property-grid {
-  display: grid;
-  grid-template-columns: 95px 1fr;
-  gap: 8px;
-  font-size: 10px;
-  margin: 14px 0;
-}
-.property-grid dt {
-  color: #8a969c;
-}
-.property-grid dd {
+.inspector-switch .count {
   margin: 0;
-  color: #3e515c;
-  overflow-wrap: anywhere;
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--muted-2);
 }
-.constraint-item {
-  padding: 10px;
-  border: 1px solid #ecdfcb;
-  background: #fffbf4;
-  border-radius: 4px;
-  margin-bottom: 8px;
+.inspector-switch button.active .count {
+  color: var(--ink-2);
 }
-.constraint-item strong {
-  display: block;
-  font-size: 11px;
-  color: #97631e;
-}
-.constraint-item small {
-  display: block;
-  font-size: 10px;
-  color: #a0845c;
-  margin-top: 6px;
-}
-.evidence-box {
-  background: #f5f8f8;
-  padding: 11px;
-  border-left: 2px solid #83a7a5;
-  border-radius: 2px;
-  font-size: 11px;
-  line-height: 1.6;
-}
-.evidence-box code {
-  font-size: 9px;
-  display: block;
-  margin-top: 7px;
-  color: #68848a;
-}
-.inspector .action-panel {
-  border: 1px solid #ccdfd8;
-  background: #f7fbf9;
-  border-radius: 5px;
-  padding: 12px;
-  margin-top: 16px;
-}
-.action-panel .action-buttons {
-  display: flex;
-  gap: 7px;
-  margin: 12px 0;
-}
-.action-panel input {
-  width: 100%;
-  font-size: 10px;
-  margin-top: 10px;
-}
-.action-panel ul {
-  padding-left: 15px;
-  font-size: 10px;
-  color: #536e65;
-  line-height: 1.8;
-}
-.action-panel code {
-  display: block;
-  color: #87978f;
-  font-size: 8px;
-  margin-top: 7px;
-}
-.action-panel .risk-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 7px;
-}
-.action-panel .risk-line span {
-  font-size: 9px;
-}
-.inspector .no-blockers {
-  color: #47786b;
-  background: #f1f7f4;
-  padding: 11px;
-  border-radius: 4px;
-  font-size: 11px;
-}
-.inspector .muted {
-  font-size: 10px;
-  color: #8d9a9e;
-  margin-top: 7px;
-}
-@media (min-width: 1600px) {
-  .inspector {
-    width: 342px;
-  }
-}
-@media (max-width: 1150px) {
-  .inspector {
-    width: 275px;
-    padding: 16px 14px;
-  }
-}
-@media (max-width: 850px) {
-  .inspector {
-    width: 246px;
-  }
-}
-.inspector-section {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--line);
-}
-.inspector-section:first-of-type {
-  padding-top: 8px;
-}
-.inspector-section h2 {
-  font-size: 16px;
-  margin: 8px 0 12px;
-}
-.inspector-section h3 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
+
+/* the pane's own scroll: the header stays where it is while detail moves */
+.inspector-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 14px 20px;
 }
 .inspector-section p {
-  font-size: 11px;
+  font-size: var(--fs-body);
   line-height: 1.7;
-  color: #74848b;
+  color: var(--ink-2);
 }
-.properties {
-  display: grid;
-  grid-template-columns: 65px 1fr;
-  gap: 9px;
-  font-size: 10px;
-  margin-top: 18px;
-}
-.properties dt {
-  color: #87949a;
-}
-.properties dd {
+
+/*
+ * Blocker reasons: rows, not cards, and the same selection grammar as every
+ * other list in the application.
+ */
+.constraint-list {
+  list-style: none;
   margin: 0;
-  color: #4b6068;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
-.evidence {
-  padding: 12px;
-  background: #f6f9f8;
-  border-left: 2px solid #92ada4;
-  margin-top: 12px;
-  font-size: 10px;
+.constraint-list button {
+  display: block;
+  width: 100%;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  transition:
+    background var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
 }
-.evidence summary {
-  cursor: pointer;
-  color: #54766b;
-  font-weight: 550;
+.constraint-list button:not(.selected):hover {
+  background: var(--hover);
 }
-.evidence p {
-  margin: 9px 0;
+.constraint-list button.selected {
+  background: var(--accent-muted);
 }
-.evidence .mono {
-  font-size: 9px;
-  color: #83948e;
+.constraint-list .eyebrow {
+  display: block;
+  margin-bottom: 3px;
+}
+.constraint-list strong {
+  display: block;
+  font-size: var(--fs-action);
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--ink);
+}
+.constraint-list button.selected strong {
+  font-weight: 600;
+}
+.constraint-list small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted-2);
+  font-size: var(--fs-label);
+}
+/* the same lifecycle as every other selected row: the whole row steps up, not only
+   its first line, so "this is the record the pane is reporting on" is one read */
+.constraint-list button.selected small {
+  color: var(--muted);
+}
+
+/*
+ * Evidence: numbered entries with a label spine, the same shape the workspace
+ * uses for a fact list, so an evidence chain is citable rather than just listed.
+ */
+.evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.evidence-list li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--space-2);
+}
+.evidence-index {
+  color: var(--muted-2);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  padding-top: 2px;
+}
+.evidence-body strong {
+  display: block;
+  color: var(--ink);
+  font-size: var(--fs-action);
+  font-weight: 600;
+}
+.evidence-body p {
+  margin: 4px 0;
+  color: var(--ink-2);
+  font-size: var(--fs-action);
+  line-height: 1.7;
+}
+.evidence-meta {
+  color: var(--muted-2);
+  font-size: var(--fs-label);
+  line-height: 1.6;
   overflow-wrap: anywhere;
 }
-.evidence-id {
-  font-size: 9px;
-  color: #83948e;
-  margin-top: 9px;
-}
+
 .action-title {
   display: flex;
-  gap: 6px;
-  justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 10px;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--fs-section);
+  margin-bottom: var(--space-2);
+}
+.action-title strong {
+  font-weight: 600;
 }
 .risk {
-  font-size: 9px;
-  border: 1px solid #dfc497;
-  padding: 2px 5px;
-  background: #fff8e9;
-  color: #966726;
+  color: var(--muted);
+  font-size: var(--fs-label);
+  font-weight: 500;
 }
 .effect-list {
-  margin-top: 12px;
-  font-size: 10px;
-  color: #6e8586;
+  margin-top: var(--space-2);
+  font-size: var(--fs-meta);
+  color: var(--muted);
 }
 .effect-list > div {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 6px 0;
+  margin: 3px 0;
 }
-.simulation-label {
-  font-size: 8px;
-  letter-spacing: 0.6px;
-  color: #ad8554;
-  border-top: 1px dashed #dccfb9;
-  margin: 14px 0;
-  padding-top: 10px;
+/*
+ * The approval gate is a soft object because it is the one thing on this pane
+ * that asks for a decision: what has to be true, the strong confirmation it may
+ * need, and the two actions. A chrome-plane block on the recessed pane plane is
+ * a visible step without becoming a card - it is cut into the surface the pane
+ * already is rather than lifted above it.
+ */
+.action-gate {
+  margin-top: var(--space-3);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-chrome);
+}
+.approval-required {
+  color: var(--muted);
+  font-size: var(--fs-meta);
+  line-height: 1.6;
+}
+.form-label {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: var(--fs-meta);
+}
+.form-label input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
 }
 .action-buttons {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin-top: 13px;
+  margin-top: var(--space-3);
 }
-.operation {
-  font-size: 8px;
-  margin-top: 11px;
-  color: #93a29f;
-  overflow-wrap: anywhere;
+.inline-more {
+  margin-top: var(--space-3);
+  display: block;
+}
+.supplementary-details {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: var(--fs-meta);
 }

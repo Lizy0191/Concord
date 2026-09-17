@@ -1,29 +1,472 @@
+/*
+ * Visual language: Quiet Instrument.
+ *
+ * Concord is a desktop coordination instrument: calm material, loud typography,
+ * dense facts. Three rules carry the system, and every value below serves one.
+ *
+ * 1. LINES -> SURFACES. Structure is carried by plane value, spacing,
+ *    typography, selected-state surfaces, and pane headers. A region does not
+ *    prove it owns its area with a border. The previous pass separated five
+ *    planes by about 1.06:1 while drawing seven 1px rules across them, so the
+ *    only structure the eye could reliably detect was the linework: the
+ *    product read as a ruled table. Every neighbouring step of the ladder now
+ *    clears 1.08:1, the work plane is the single lightest plane on screen, and
+ *    the shell itself draws no structural hairline at all. A line is spent only
+ *    where it is content (a table row, an evidence boundary) or a control
+ *    boundary that has to be identifiable.
+ *
+ * 2. SURFACES RECEDE, THEY DO NOT FLOAT. A grouped block of engineering values
+ *    is cut *into* the plane (`--surface-detail`) rather than lifted above it,
+ *    and floating surfaces are the only objects that carry elevation. This is
+ *    why the earlier card pass could not work: white on `--surface-workspace` is
+ *    1.02:1, so a "card" was visible only by its border and its shadow, which is
+ *    exactly the failure mode rule 1 removes.
+ *
+ * 3. HIERARCHY IS TYPE AND WEIGHT, NOT SIZE. Seven roles with a real size step
+ *    each (20 / 18 / 14.5 / 13.5 / 13 / 12 / 11.5), three weights of which 600 is
+ *    spent only where it carries information, and tabular figures. The previous
+ *    scale was one notch larger at the top and used 600 on every label, which is
+ *    the "heavy" half of the density problem: the product read as coarser than it
+ *    was, because the two tiers that carry the most text were the two tiers that
+ *    had been emphasised.
+ *
+ * The ladder is cool-stone graphite: a true neutral with a whisper of cool and
+ * no more. The previous pass carried a few points of warmth in every plane,
+ * which at this density stopped reading as material and started reading as a
+ * yellow-green cast - the workspace looked slightly dirty rather than slightly
+ * warm. Warmth is gone from the structural ladder entirely rather than merely
+ * reduced: a neutral whose red and blue channels sit within a few points of each
+ * other reads as *unpainted*, which is what a desktop instrument should look
+ * like. It is deliberately not a blue-grey either - the blue channel is held
+ * inside a whisper so the product never reads as a theme, and a cold blue-grey
+ * at this density reads as an absence of colour.
+ *
+ * One slate-ink accent carries both "you are here" and commitment: focus, the
+ * selected-object surface, the active view indicator, and the primary control.
+ * That is the identity this product was missing - a neutral workspace with a
+ * restrained ink/slate signature - and it replaces the previous black primary
+ * button, which read as a generic template control rather than as this
+ * product's own. Amber is reserved for blocking state and is never decoration,
+ * and it is spent on small semantic objects rather than on large surfaces.
+ */
 :root {
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  color: #24313a;
-  background: #f2f4f5;
-  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--bg-app);
+  font-size: 13.5px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --line: #dfe5e7;
-  --muted: #77838b;
-  --ink: #203038;
-  --accent: #176c66;
-  --amber: #a3611b;
+
+  /*
+   * Neutrals. One plane per structural role, ordered by recession: the window
+   * backdrop is the dimmest, persistent navigation sits on top of it, the docked
+   * contextual Inspector is the next step, a local object list - a BIM element
+   * browser, a document source list - comes next, then the chrome bands (a
+   * toolbar, a pane header, a grouped value well), and the work plane is the
+   * lightest thing on screen. Depth is a value relationship, never a box, so no
+   * plane needs a border to be legible.
+   *
+   * The four roles are distinguished by which plane they take - the local object
+   * list used to share the Inspector's, which is what made a window of three
+   * similar grey columns around one work plane read as assembled rather than as
+   * one product - and each role is spent once.
+   *
+   * Every one of those roles is now a step of the *ordered* ladder, and that is
+   * the correction this pass made. The previous ladder was ordered
+   * `bg-app < nav < detail < chrome < workspace` and then spent `--surface-list`
+   * *inside* that ladder as a half step, which left the two pairs it mattered for
+   * below the floor: the local object list rendered 1.05:1 from the Inspector and
+   * 1.035:1 from the chrome bands, and a 1px pane header over a 1.035:1 body is
+   * not a band, it is the same slab with a line through it. Worse, persistent
+   * navigation had been re-assigned onto `--surface-chrome`, so the sidebar,
+   * every pane header, every toolbar and the timeline were literally one value
+   * and the local browser was the smallest step away from all of them. The
+   * Windows review read that as "several large nearly-white slabs", which is what
+   * it was.
+   *
+   * The ladder was therefore re-spaced rather than re-decorated: navigation moves
+   * down, the Inspector and the local object list move down with it, and the
+   * chrome and work planes stay exactly where they were, because those two were
+   * the pair that already read correctly. That re-spacing is what buys each
+   * neighbouring pair a real step without returning to linework - five planes
+   * cannot be squeezed into the 1.03:1 band the previous pass had left for them.
+   *
+   * Measured, not eyeballed: every neighbouring step of the ladder above clears
+   * 1.08:1 (frontend/tests/design-tokens.test.mjs holds the whole order,
+   * `--surface-list` included), and the *rendered* pairs the audit measured are
+   * 1.175:1 navigation-to-local-browser, 1.085:1 pane-header-to-local-browser
+   * body, and 1.186:1 local-browser-to-work-plane. The steps have to be this
+   * large because the eye is far better at detecting a thin high-contrast edge
+   * than a 2% area difference - so a small step plus a hairline reads as a table,
+   * while a large step plus no hairline reads as separated regions.
+   *
+   * Navigation-to-Inspector is the tight step, at 1.0800:1 - it clears the floor
+   * by 0.00005 and there is no slack left anywhere in this ladder. Navigation
+   * cannot come down any further without `--line-control` failing its 3:1 floor on
+   * the plane that token exists for, and the Inspector cannot come up without
+   * breaking its step to the local object list. A future edit that wants room here
+   * has to move `--line-control` (and then `--muted-2`, which is spaced against
+   * the same plane) *with* the navigation plane, not one of them alone.
+   */
+  --bg-app: #cbcdcf;
+  --surface-nav: #d6d7d8;
+  --surface-detail: #dedfe0;
+  /* the local object list's own body: a plane of its own, one full step below the
+     chrome bands it is named by and one above persistent navigation */
+  --surface-list: #e7e8e9;
+  --surface-chrome: #f0f1f2;
+  --surface-workspace: #fbfbfc;
+  /* controls, content objects, and floating surfaces stay plain white so they
+     read as objects sitting on a region rather than as another region */
+  --surface: #fff;
+
+  /*
+   * Lines. Four values, one job each, and the job is written on the token so a
+   * new rule can pick the right one instead of reaching for the nearest grey.
+   */
+  /* content rules: table rows, evidence boundaries. Decorative, so no
+     contrast floor - but it must stay visible on the work plane it is drawn on */
+  --line: #d8dbdd;
+  /* the quieter content rule, for a second-order separation on a light plane */
+  --line-soft: #e5e8e9;
+  /*
+   * Control boundaries. Two tokens, and the split is a placement rule rather
+   * than a tone preference: a boundary has to clear WCAG 1.4.11 (3:1) against
+   * the plane it is drawn on, and the two planes controls actually sit on are
+   * far apart in value.
+   *
+   * `--line-control` is the boundary for a control that can land on the
+   * *navigation* plane - the project picker, and the startup token field on the
+   * window backdrop. It is re-toned with the plane it is reserved for: on the
+   * navigation plane it measures 3.07:1, which is the floor, so its value is not
+   * free and it moves whenever that plane does. It cannot be quietened any
+   * further without failing on the exact plane it is reserved for.
+   *
+   * `--line-control-soft` is the boundary for every control that only ever sits
+   * on a light plane - a toolbar button, a search field, a dialog field, the
+   * BIM IFC actions. The binding plane is the darkest of those
+   * (`--surface-detail`, where the Inspector's own fields sit) and it clears
+   * 3.05:1 there, 3.60:1 on chrome, 4.07:1 on white. It is a little lighter than
+   * `--line-control`, which is what stops every secondary control in the product
+   * reading as a native form outline - and the split is smaller than it used to
+   * be because the Inspector's plane came down with the rest of the ladder, so
+   * the room between the two boundaries narrowed with it.
+   *
+   * The rule is one direction only: `--line-control-soft` may never be spent on
+   * `--surface-nav` or `--bg-app`, where it measures 2.82:1 and 2.55:1.
+   * frontend/tests/design-tokens.test.mjs holds both halves of it.
+   */
+  --line-control: #777879;
+  --line-control-soft: #7d7e7f;
+  /* floating-surface edges. A menu or a dialog is identified by its surface and
+     its shadow; this only has to close the shape. */
+  --line-float: #c8cbce;
+
+  --ink: #17191b;
+  --ink-2: #373a3d;
+  --muted: #525558;
+  /* The text ladder is spaced against the *darkest* structural plane a token can
+     land on (--surface-nav), not against the work plane. Spacing it against the
+     work plane is how muted-2 previously sat at 2.96:1 while carrying product
+     text - a value that looked fine on paper and failed wherever it was used.
+     Moving the ladder darker in this pass is what pulled muted-2 down with it. */
+  --muted-2: #5a5d60;
+
+  /* interaction overlays are neutral ink at low alpha, so a hover reads as the
+     same material darkening under the pointer rather than as grey paint */
+  --hover: rgba(23, 25, 27, 0.05);
+  /*
+   * The second depth of the same overlay, and the reason it exists is that a
+   * secondary control now rests on the first one. A white rectangle on a chrome
+   * band is a form outline and nothing else: at 1.09:1 its own fill says nothing,
+   * so a 1px boundary was carrying the whole control and every toolbar read as a
+   * row of outlined boxes. Filled with the neutral the pointer already uses, the
+   * same control is a quiet local surface whose edge is one of two signals rather
+   * than the only one - and the pointer then darkens it by `--hover-strong`, so
+   * rest and hover are one material at two depths.
+   */
+  --hover-strong: rgba(23, 25, 27, 0.09);
+  --focus: var(--accent);
+
+  /*
+   * Radius is semantic: one step per object class, not one softness applied to
+   * everything. The values barely moved in this pass - what changed is *where*
+   * they are spent. Softness is now attached to objects inside a region (a
+   * selected row, a grouped well, a property block) and to objects that float
+   * above one, while every structural seam stays square. Attaching the radius to
+   * the shell instead is what produced both previous failures in turn: a page of
+   * rounded cards, then a shell with no material at all.
+   */
+  --radius-none: 0px; /* pane joins and structural seams: never softened */
+  --radius-sm: 4px; /* selected rows, menu items, tags, tiny interactive objects */
+  --radius-md: 6px; /* inputs, buttons, and content objects inside a region */
+  --radius-lg: 8px; /* menus, popovers, toasts, pane-local floating objects */
+  --radius-xl: 10px; /* dialogs: the one object layered over everything */
+
+  /*
+   * Motion: short, asymmetric, ease-out, and spent on state changes rather than
+   * on pointer feedback. The curve starts quickly and settles slowly, which is
+   * what a desktop pane feels like and is not what a spring feels like. There
+   * are no springs, no bounce, and no scale beyond a pressed control.
+   */
+  --motion-instant: 100ms; /* the pointer's own feedback */
+  --motion-fast: 120ms; /* a control resolving */
+  --motion: 160ms; /* a region, a record, or an indicator changing identity */
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /*
+   * Elevation is spent only on objects that genuinely leave the page, in two
+   * steps. A control is identified by its own boundary and its surface, never by
+   * a shadow - a shadow under a button is the tell of a template, and it also
+   * made a committed action compete with a floating surface for the same signal.
+   */
+  --shadow-float:
+    0 2px 4px rgba(20, 23, 27, 0.06), 0 8px 24px rgba(20, 23, 27, 0.12);
+  --shadow-modal:
+    0 4px 12px rgba(17, 20, 24, 0.1), 0 24px 64px rgba(17, 20, 24, 0.22);
+  /* the scrim behind a modal: neutral, so it reads as the page dimming rather
+     than as a tint laid over it */
+  --scrim: rgba(20, 23, 27, 0.4);
+
+  /* one restrained slate-ink accent: focus, selection, active position, and -
+     because it is the only colour this product owns - commitment */
+  --accent: #3d5a80;
+  /*
+   * Accent has area. The accent is a *surface*, not just a 1-2px indicator: a
+   * selected work package, source, or BIM element is a tinted row, and the
+   * current view in a menu is a tinted item. 13% is calibrated to clear a
+   * visible step from both the work plane and the recessed pane plane while
+   * staying a tint rather than a fill - the accent never floods a pane. It
+   * replaced 10%, which on the darker navigation plane the sidebar's selected
+   * row sits on read as one more grey rather than as the current row; the row
+   * was answering "where am I" in a value the eye had already spent on the
+   * metadata beneath it.
+   */
+  --accent-muted: rgba(61, 90, 128, 0.13);
+  /*
+   * The same family, one step denser, for the one job the selection tint cannot
+   * do: a highlight inside running text. At 10% a mark inside a paragraph
+   * disappears among the words around it, and a found match has to be the first
+   * thing the eye lands on in the chunk.
+   */
+  --accent-strong: rgba(61, 90, 128, 0.18);
+
+  /*
+   * The primary control fill. It is the accent family taken down to a working
+   * depth rather than a second colour: the same slate the selected row and the
+   * active view are cut from, dark enough to carry white text at 11:1. A
+   * committed action and the current position therefore belong to one identity
+   * instead of two, and the button stops being the one black object in a
+   * graphite product.
+   */
+  --primary: #2f3d4f;
+  --primary-hover: #3e4f64;
+  --on-primary: #fff;
+
+  /*
+   * One restrained exception colour, used only for blocking state. Its surface
+   * step is a very low-chroma warm white rather than the saturated cream it used
+   * to be: at full chroma a blocked work package turned into a sticky note that
+   * out-shouted the page it was warning about. Amber states the exception in a
+   * badge, a rail, or a value - it does not fill a region.
+   */
+  --warn-fg: #7a4e00;
+  --warn-line: rgba(122, 78, 0, 0.42);
+  --warn-bg: #f7f2e8;
+  --danger-fg: #a02a1e;
+  --danger-soft: rgba(160, 42, 30, 0.06);
+
+  /*
+   * Type scale: one step per role, with a real size step between every role.
+   * Seven roles: 20 / 18 / 14.5 / 13.5 / 13 / 12.5 / 12. The display step is the
+   * application's own name on the startup surface; the label step is the smallest
+   * tier, and it is now a real 12px rather than 11.5px (below).
+   *
+   * The two smallest steps moved up one notch in this pass - 12 -> 12.5 and
+   * 11.5 -> 12 - and nothing else moved. The floor is the reason. 11.5px was
+   * carrying text a person has to read: a property label, a metadata key, a pane
+   * header's count, a work package's own id beside its name. Meaningful text below
+   * 12px is the point at which a desktop reader stops reading and starts decoding,
+   * and the small end is where the product's *volume* of quiet text lives, so the
+   * lift costs a little height in every list and buys legibility everywhere. Only
+   * technical register - a GUID, a SHA, an IFC id, a revision - may approach the
+   * floor, and it approaches it through the mono role rather than by earning a
+   * smaller step. Hierarchy below this point is spent on weight and colour, which
+   * is what the two tiers beneath the action step are: a 500 label in a quieter
+   * ink, not a smaller one.
+   *
+   * The scale came down about 7% in the density pass before this one, unevenly and
+   * on purpose. The two steps that were doing the shouting were the display and the
+   * title step: a 20px pane title in a 48px toolbar band and a 22px product name
+   * read as a settings application, and the object title sat one pixel under the
+   * display step, so a work package's own name competed with the application's. The
+   * two bands that carry the volume of product text moved least - body text cannot
+   * be made "denser" by shrinking it past the point where Chinese is comfortable
+   * at 1x - and the label tier moved *up* there too, because 11px tracking labels
+   * were the reason the header and metadata rows read as coarse rather than quiet.
+   * That direction is the one this pass finished: the smallest tier is now at the
+   * floor a reader can actually hold.
+   *
+   * The hierarchy is spent on weight and colour instead (see --font-ui).
+   */
+  --fs-display: 20px; /* the application's own name, on the startup surface */
+  --fs-title: 18px; /* object title: the selected work package, a document */
+  --fs-section: 14.5px; /* a pane's or a section's own heading */
+  --fs-body: 13.5px; /* body text and engineering values */
+  --fs-action: 13px; /* controls, list-row titles */
+  --fs-meta: 12.5px; /* metadata, timestamps, counts, gutters */
+  --fs-label: 12px; /* the small label tier: eyebrows, group titles, pane headers */
+
+  /*
+   * Font roles. One UI face for everything, and one technical face for the
+   * identifiers an engineer scans rather than reads (a GUID, a SHA, an IFC id).
+   * System faces only: the same build renders in a browser and in the Windows
+   * Tauri WebView, and a remote font would be a network dependency and a flash
+   * of unstyled text in both.
+   *
+   * Three weights are named - 400, 500, 600 - and the middle one is deliberately
+   * the tier labels and metadata are written in. On the Windows WebView both
+   * "Segoe UI" and "Microsoft YaHei" resolve 500 to their regular face, so a 500
+   * label is *not* distinguished from body text by weight on the platform this
+   * ships in; it is distinguished by size, tracking, and colour, which is the
+   * hierarchy this pass wants. 600 is then spent only where it is carrying real
+   * information - an object title, the current row or view, a committed action -
+   * instead of on every 11px label in the product, which is what made the
+   * interface read as heavy. Never write a 500-to-600 *difference* into a line
+   * that carries Chinese product text: it renders as identical.
+   */
+  --font-ui:
+    "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui,
+    sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /*
+   * Spacing rhythm. A 4px base with a repeating step, so padding and gaps land
+   * on a shared set of values instead of every component inventing its own
+   * 13px. Structural chrome uses the small end, region padding the middle, and
+   * section separation the large end - the two largest steps exist so that
+   * "another section starts here" can be said with space instead of a rule.
+   */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /*
+   * The analysis footer's own height, named once. It is declared as a token
+   * because two places have to agree on it: the footer takes it as its minimum
+   * height, and every scrollable workspace reserves it as bottom padding so the
+   * end of the content can always clear the band above it.
+   */
+  --status-bar-h: 32px;
+
+  /*
+   * Control heights, named once so the density calibration is one edit rather
+   * than a hunt through feature stylesheets. Two steps: the standard control
+   * (buttons, inputs, the project picker) and the small one used where a control
+   * sits inside a chrome band that is itself only 42px tall. Both stay above the
+   * 24px WCAG 2.5.8 target floor, which is the one number this scale may not go
+   * under for the sake of density.
+   */
+  --control-h: 28px;
+  --control-h-sm: 25px;
+
+  /*
+   * The gap between a functional icon and its label, named once. It is one
+   * number for the whole product because it is an optical relationship rather
+   * than a layout decision: a 15px mark and a line of 13px text need about 6px
+   * between them, and a feature that invents its own value is how two buttons in
+   * one chrome row stop reading as one row. The icon size and stroke that go
+   * with it live in frontend/src/components/ui/icon.ts.
+   */
+  --icon-gap: 6px;
+
+  /*
+   * Semantic layer. These are the names product code and every component under
+   * components/ui should use: they say what a value is *for*, so a future
+   * palette change is one edit to the physical ladder above rather than a hunt
+   * through feature stylesheets for `--surface-workspace`. Each one resolves to
+   * a step of that ladder, so there is still exactly one place a colour value is
+   * written - and frontend/tests/design-tokens.test.mjs checks that every name
+   * in this block resolves to a token that exists.
+   */
+  --background: var(--bg-app);
+  --workspace: var(--surface-workspace);
+  /*
+   * Persistent navigation takes the recessed navigation plane, and this is the
+   * assignment the surface pass corrected back.
+   *
+   * It had been moved onto `--surface-chrome` to stop the column reading as a tall
+   * grey slab bolted to the left of the window - and the slab was real, but the
+   * cause was never the plane: the column was 248px wide, carried nothing below
+   * its last row, and had no material relationship with anything else on screen.
+   * The width and the row grammar were fixed where they belong (styles/shell.css),
+   * and the assignment then cost the product the one distinction a desktop
+   * application most needs: global navigation, every pane header, both toolbars,
+   * the timeline and the local object browser all rendered within 1.035:1 of each
+   * other. The Windows review called the result "several large nearly-white
+   * slabs", which is precisely what one value spent on five roles looks like.
+   *
+   * On the navigation plane the column is the most recessed large surface on
+   * screen, the work plane is 1.39:1 lighter than it, and the local object browser
+   * beside it is a full step lighter (1.18:1) - so "global navigation" and "this
+   * tool's own browser" are two roles a reader can separate at a glance rather
+   * than two greys they have to compare. The column is not dark: it is the second
+   * lightest thing on screen after the work plane, and it is the window backdrop
+   * that stays dimmest.
+   *
+   * Selection is not weakened by the darker plane. --accent-muted measures 1.21:1
+   * on `--surface-chrome` and strengthens as the plane under it darkens, so a
+   * selected work package is a *stronger* step on the navigation plane than it
+   * was on chrome (tests/design-tokens.test.mjs holds the floor).
+   */
+  --sidebar: var(--surface-nav);
+  --chrome: var(--surface-chrome);
+  --surface-elevated: var(--surface);
+  --border: var(--line);
+  --border-strong: var(--line-control);
+  --text: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted: var(--muted);
+  --text-faint: var(--muted-2);
+  --warning: var(--warn-fg);
+  --warning-muted: var(--warn-bg);
+  /*
+   * The completed/healthy semantic. Restrained on purpose: it is a status
+   * colour, not a brand accent, and the product reports READY and COMPLETED as
+   * plain text rather than as a green surface. There is deliberately no
+   * success *surface* token: a green panel on a work plane is the dashboard
+   * read this direction avoids, and nothing has ever needed one.
+   */
+  --success: #2f6b4f;
+  --focus-ring: var(--accent);
 }
 * {
   box-sizing: border-box;
 }
+/*
+ * A native scrollbar in a desktop window is a strong "this is a web page"
+ * signal, and the panes here are narrow, so the default 15px gutter also costs
+ * real reading width. Thin and neutral, one rule, global.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-control) transparent;
+}
 body {
   margin: 0;
+}
+/*
+ * Engineering figures align by default. This product is read down columns of
+ * identifiers, revisions, counts, and timestamps, where a proportional digit is
+ * the difference between a comparable column and a ragged one. The document
+ * reading surface opts back out, because that text is prose from a parsed file.
+ */
+body {
+  font-variant-numeric: tabular-nums;
 }
 button,
 input,
@@ -36,27 +479,28 @@ button {
 }
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.48;
+  opacity: 0.5;
 }
 button,
 input,
 textarea,
 select {
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid #298b82;
+select:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--focus);
 }
 input,
 textarea,
 select {
-  border: 1px solid #cfd8dc;
-  border-radius: 5px;
-  background: #fff;
-  padding: 8px 10px;
+  border: 1px solid var(--line-control-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 4px 8px;
   color: var(--ink);
 }
 textarea {
@@ -70,33 +514,55 @@ p {
   margin: 0;
 }
 h1 {
-  font-size: 25px;
+  font-size: var(--fs-display);
   font-weight: 600;
-  letter-spacing: -0.65px;
+  line-height: 1.25;
 }
+/* the object title: one per view, and the only text at this size in a workspace */
 h2 {
-  font-size: 18px;
+  font-size: var(--fs-title);
   font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
+/* a pane's or a section's own heading */
 h3 {
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--fs-section);
+  font-weight: 500;
+  line-height: 1.35;
+}
+h4 {
+  font-size: var(--fs-action);
+  font-weight: 500;
+  line-height: 1.4;
 }
 small {
-  font-size: 11px;
+  font-size: var(--fs-meta);
 }
 code,
 .mono {
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-mono);
 }
 code {
-  font-size: 11px;
+  font-size: var(--fs-meta);
   overflow-wrap: anywhere;
 }
 button {
   transition:
-    background 0.12s,
-    border-color 0.12s;
+    background var(--motion-fast) var(--ease),
+    border-color var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease);
+}
+/*
+ * Press feedback is scoped to real controls. Full-bleed list rows are excluded
+ * on purpose: they carry their own bottom rule, and a translate would drag that
+ * rule down with the pointer and read as layout jitter rather than as a press.
+ */
+.button:not(:disabled):active,
+.import-button:not(:disabled):active,
+.icon-button:not(:disabled):active {
+  transform: translateY(1px);
 }
 button svg {
   flex-shrink: 0;
@@ -110,36 +576,46 @@ pre {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--fs-body);
 }
 th {
   text-align: left;
-  background: #f5f7f7;
-  color: #6a7880;
-  font-size: 10px;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
-  font-weight: 600;
-  padding: 12px 14px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
 }
 td {
-  padding: 14px;
-  border-bottom: 1px solid #e7ebed;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
   vertical-align: top;
 }
 td small {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted);
 }
 tbody tr:hover {
-  background: #f7faf9;
+  background: var(--hover);
 }
 a {
-  color: var(--accent);
+  color: var(--ink);
 }
-@media (max-width: 1150px) {
-  h1 {
-    font-size: 21px;
+
+/*
+ * Reduced motion is honoured globally rather than per selector, so no
+ * interaction is left animating because a rule was added later and forgotten.
+ * Durations collapse to near-zero instead of the rules being removed, which
+ * keeps every state change itself intact - only its timing goes away.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

@@ -1,6 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { DTO, WorkPackage } from "../api/client";
 import { Button } from "../components/ui/button";
+import { AppDialog, DialogClose } from "../components/ui/AppDialog";
+import { AppSelect } from "../components/ui/AppSelect";
+import { domainLabel } from "../ui/labels";
+import { demoWorkPackageName } from "../ui/demo/demoPresentation";
+
+/*
+ * The submitted enum values are the API contract and never change; only the
+ * visible words do. They are read from the label layer so the composer and the
+ * rest of the product cannot drift apart.
+ */
+const CHANGE_KINDS = [
+  "design_revision",
+  "workforce",
+  "predecessor",
+  "material",
+  "equipment",
+  "inspection",
+  "external",
+] as const;
+
+const KIND_OPTIONS = CHANGE_KINDS.map((value) => ({
+  value,
+  label: domainLabel("eventKind", value),
+}));
 
 export function EventComposer({
   wp,
@@ -13,37 +37,6 @@ export function EventComposer({
   onCreate: (event: DTO<"ProjectEvent-Input">) => void;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const focusable = () =>
-      Array.from(
-        dialog.current?.querySelectorAll<HTMLElement>(
-          "button, input, textarea, select",
-        ) ?? [],
-      ).filter((element) => !(element as HTMLButtonElement).disabled);
-    focusable()[0]?.focus();
-    const keydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-      if (event.key !== "Tab") return;
-      const items = focusable();
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
-      }
-    };
-    dialog.current?.addEventListener("keydown", keydown);
-    const element = dialog.current;
-    return () => {
-      element?.removeEventListener("keydown", keydown);
-      previouslyFocused?.focus();
-    };
-  }, [onClose]);
   const [kind, setKind] =
     useState<DTO<"ProjectEvent-Input">["kind"]>("design_revision");
   const [value, setValue] = useState("V17");
@@ -66,89 +59,77 @@ export function EventComposer({
       project_id: project,
       work_package_id: wp.id,
       kind,
-      title: `${kind.replaceAll("_", " ")} / ${wp.id}`,
+      title: `${domainLabel("eventKind", kind)} / ${wp.id}`,
       note,
       source: "local-demo-ui",
       change,
     });
   }
   return (
-    <div className="modal-backdrop">
-      <section
-        ref={dialog}
-        className="event-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="event-title"
-      >
-        <span className="eyebrow">NEW PROJECT OBSERVATION</span>
-        <h2 id="event-title">Record an event</h2>
-        <p>
-          {wp.id} / {wp.name}
-        </p>
+    <AppDialog
+      open
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      eyebrow={<span className="eyebrow">新建项目观察</span>}
+      title="记录变更"
+      description={`${wp.id} / ${demoWorkPackageName(wp.id, wp.name)}`}
+      className="event-dialog"
+    >
+      <label className="form-label">
+        变更类型
+        <AppSelect
+          label="变更类型"
+          value={kind}
+          onChange={(next) => {
+            const k = next as typeof kind;
+            setKind(k);
+            setValue(
+              k === "workforce"
+                ? "1"
+                : k === "material"
+                  ? (Object.keys(wp.materials ?? {})[0] ?? "")
+                  : k === "equipment"
+                    ? (Object.keys(wp.equipment ?? {})[0] ?? "")
+                    : k === "predecessor"
+                      ? (wp.predecessors?.[0] ?? "")
+                      : "V17",
+            );
+          }}
+          options={KIND_OPTIONS}
+        />
+      </label>
+      {!["inspection", "external"].includes(kind) && (
         <label className="form-label">
-          Event family
-          <select
-            value={kind}
-            onChange={(e) => {
-              const k = e.target.value as typeof kind;
-              setKind(k);
-              setValue(
-                k === "workforce"
-                  ? "1"
-                  : k === "material"
-                    ? (Object.keys(wp.materials ?? {})[0] ?? "")
-                    : k === "equipment"
-                      ? (Object.keys(wp.equipment ?? {})[0] ?? "")
-                      : k === "predecessor"
-                        ? (wp.predecessors?.[0] ?? "")
-                        : "V17",
-              );
-            }}
-          >
-            <option value="design_revision">Design revision</option>
-            <option value="workforce">Workforce shortage</option>
-            <option value="predecessor">Incomplete predecessor</option>
-            <option value="material">Material unavailable</option>
-            <option value="equipment">Equipment unavailable</option>
-            <option value="inspection">Inspection failed</option>
-            <option value="external">External observation</option>
-          </select>
-        </label>
-        {!["inspection", "external"].includes(kind) && (
-          <label className="form-label">
-            {kind === "design_revision"
-              ? "New revision"
-              : kind === "workforce"
-                ? "Available workers"
-                : "Resource / predecessor ID"}
-            <input
-              type={kind === "workforce" ? "number" : "text"}
-              min={0}
-              max={10000}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-            />
-          </label>
-        )}
-        <label className="form-label">
-          Source note (untrusted content)
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={4000}
+          {kind === "design_revision"
+            ? "新版本"
+            : kind === "workforce"
+              ? "可用人员"
+              : "资源 / 前置工作 ID"}
+          <input
+            type={kind === "workforce" ? "number" : "text"}
+            min={0}
+            max={10000}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
           />
         </label>
-        <div className="dialog-actions">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={submit}>Ingest & analyze</Button>
-        </div>
-        <small>
-          Events change recorded facts. They do not grant agent permissions.
-        </small>
-      </section>
-    </div>
+      )}
+      <label className="form-label">
+        来源说明（不受信任内容）
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          maxLength={4000}
+        />
+      </label>
+      <div className="dialog-actions">
+        <DialogClose asChild>
+          <Button variant="secondary">取消</Button>
+        </DialogClose>
+        <Button onClick={submit}>提交并分析</Button>
+      </div>
+      <small>变更会更新已记录事实，但不会授予任何代理权限。</small>
+    </AppDialog>
   );
 }
