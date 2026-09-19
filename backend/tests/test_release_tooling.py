@@ -12,7 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 def load(name):
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # Match a direct `python scripts/name.py` launch, including sibling imports.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.syspath_prepend(str(ROOT / "scripts"))
+        spec.loader.exec_module(module)
     return module
 
 
@@ -132,7 +135,7 @@ def test_native_webdriver_contract_drives_real_element_protocol(tmp_path):
 
     import httpx
 
-    module = load("native_webdriver_smoke")
+    module = load("native_webdriver_client")
     calls = []
 
     def respond(request):
@@ -150,12 +153,15 @@ def test_native_webdriver_contract_drives_real_element_protocol(tmp_path):
         base_url="http://127.0.0.1:12345", transport=httpx.MockTransport(respond)
     ) as client:
         session = module.NativeSession(client)
-        session.start(tmp_path / "application")
+        session.start(tmp_path / "application", user_data_folder=tmp_path / "webview")
         session.click(".inspector", "Approve R", startswith=True)
         session.close()
     assert calls[0][2]["capabilities"]["alwaysMatch"]["tauri:options"]["application"] == str(
         tmp_path / "application"
     )
+    assert calls[0][2]["capabilities"]["alwaysMatch"]["tauri:options"]["webviewOptions"] == {
+        "userDataFolder": str(tmp_path / "webview")
+    }
     assert ("POST", "/session/native-fixture/element/approve-element/click", {}) in calls
     assert calls[-1][:2] == ("DELETE", "/session/native-fixture")
 
@@ -163,7 +169,7 @@ def test_native_webdriver_contract_drives_real_element_protocol(tmp_path):
 def test_native_webdriver_never_reports_protocol_errors_as_success():
     import httpx
 
-    module = load("native_webdriver_smoke")
+    module = load("native_webdriver_client")
     with httpx.Client(
         base_url="http://127.0.0.1:12345",
         transport=httpx.MockTransport(

@@ -27,6 +27,10 @@ jobs:
       - run: python scripts/check_locks_present.py
       - run: uv lock --check
       - run: rustup default stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+          cache-on-failure: true
       - run: npm install --global pnpm@10.17.1
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf webkit2gtk-driver xvfb dbus-x11
@@ -40,12 +44,40 @@ jobs:
           SIDECAR=artifacts/sidecar/cca-sidecar
           if [ "$RUNNER_OS" = "Windows" ]; then SIDECAR="${SIDECAR}.exe"; fi
           uv run --frozen --no-sync python scripts/http_smoke.py --runtime dbos --profile desktop --sidecar "$SIDECAR" --crash-restart --output artifacts/native-sidecar.json
-      - name: Install the actual Linux WebDriver intermediary
-        if: runner.os == 'Linux'
+          uv run --frozen --no-sync python scripts/agent_lifecycle_smoke.py --sidecar "$SIDECAR" --output artifacts/native-agent.json
+      - name: Install the native WebDriver intermediary
+        if: runner.os != 'macOS'
         run: cargo install tauri-driver --locked --version '^2.0'
+      - name: Install matching Windows WebView2 driver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $runtime = Get-ChildItem "${env:ProgramFiles(x86)}/Microsoft/EdgeWebView/Application" -Directory |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+          if (-not $runtime) { throw 'WebView2 runtime is required for native qualification' }
+          $driverDir = Join-Path $env:RUNNER_TEMP 'concord-edge-driver'
+          $archive = Join-Path $env:RUNNER_TEMP 'concord-edge-driver.zip'
+          Invoke-WebRequest "https://msedgedriver.microsoft.com/$($runtime.Name)/edgedriver_win64.zip" -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $driverDir
+          $driverDir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          Write-Output "WebView2 runtime: $($runtime.Name)"
+          & (Join-Path $driverDir 'msedgedriver.exe') --version
       - name: Real packaged Tauri WebView and sidecar coordination
         if: runner.os == 'Linux'
         run: xvfb-run -a dbus-run-session -- uv run --frozen --no-sync python scripts/native_webdriver_smoke.py --application desktop/src-tauri/target/release/construction-coordination-agent --output artifacts/native-webview.json
+      - name: Real packaged Windows WebView2 and sidecar coordination
+        if: runner.os == 'Windows'
+        run: uv run --frozen --no-sync python scripts/windows_native_user.py --application desktop/src-tauri/target/release/construction-coordination-agent.exe --output artifacts/native-webview.json
+      - name: Generate real IFC for the packaged WebView
+        if: runner.os != 'macOS'
+        run: uv run --frozen --no-sync python scripts/generate_ifc_fixture.py
+      - name: Real packaged Linux IFC rendering and import
+        if: runner.os == 'Linux'
+        run: xvfb-run -a dbus-run-session -- uv run --frozen --no-sync python scripts/native_webdriver_smoke.py --application desktop/src-tauri/target/release/construction-coordination-agent --ifc-fixture fixtures/harbor-east.ifc --output artifacts/native-ifc.json
+      - name: Real packaged Windows IFC rendering and import
+        if: runner.os == 'Windows'
+        run: uv run --frozen --no-sync python scripts/windows_native_user.py --application desktop/src-tauri/target/release/construction-coordination-agent.exe --ifc-fixture fixtures/harbor-east.ifc --output artifacts/native-ifc.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -53,7 +85,13 @@ jobs:
           path: |
             desktop/src-tauri/target/release/bundle/
             artifacts/native-sidecar.json
+            artifacts/native-agent.json
             artifacts/native-webview.json
             artifacts/native-webdriver.log
             artifacts/native-webview-failure.png
+            artifacts/native-webview-pass.png
+            artifacts/native-ifc.json
+            artifacts/native-ifc-webdriver.log
+            artifacts/native-ifc-pass.png
+            artifacts/native-ifc-failure.png
           retention-days: 14

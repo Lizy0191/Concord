@@ -1,6 +1,10 @@
 """Append-only source originals. Parsing is a separate durable capability responsibility."""
 
 import hashlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.application.agent_control import AgentControlService
 
 from app.application.projects import record_lifecycle_change
 from app.domain.actions import Principal
@@ -46,11 +50,15 @@ def source_status(repo: CoordinationRepository, source: ProjectSource) -> Projec
     )
 
 
-def source_statuses(repo: CoordinationRepository, project_id: str) -> list[ProjectSourceStatus]:
-    sources = repo.project_sources(project_id)
+def source_statuses(
+    repo: CoordinationRepository, project_id: str, *, limit: int | None = None
+) -> list[ProjectSourceStatus]:
+    sources = repo.project_sources(project_id, limit=limit)
     if not sources:
         return []
-    latest_ids = repo.latest_source_revision_ids(project_id)
+    latest_ids = repo.latest_source_revision_ids(
+        project_id, source_ids=tuple(s.id for s in sources) if limit is not None else None
+    )
     baseline = repo.latest_baseline(project_id)
     accepted_ids = (
         {entry.source_id: entry.revision_id for entry in baseline.entries} if baseline else {}
@@ -63,8 +71,15 @@ def source_statuses(repo: CoordinationRepository, project_id: str) -> list[Proje
 
 
 class ProjectSourceService:
-    def __init__(self, factory: RepositoryFactory, storage: FileStore, max_upload_bytes: int):
+    def __init__(
+        self,
+        factory: RepositoryFactory,
+        storage: FileStore,
+        max_upload_bytes: int,
+        agent_control: "AgentControlService | None" = None,
+    ):
         self.factory, self.storage, self.max_upload_bytes = factory, storage, max_upload_bytes
+        self.agent_control = agent_control
 
     def create(
         self, project_id: str, request: CreateProjectSource, principal: Principal
@@ -110,6 +125,8 @@ class ProjectSourceService:
             repo.project_source(project_id, source_id)
             duplicate = repo.source_revision_by_hash(project_id, source_id, digest)
         if duplicate:
+            if self.agent_control:
+                self.agent_control.dispatch(project_id)
             return RevisionUploadResult(revision=duplicate, duplicate=True)
         key = f"project-sources/{revision.id}/{digest}"
         revision = revision.model_copy(update={"storage_key": key})
@@ -119,10 +136,12 @@ class ProjectSourceService:
             self.storage.put(key, content)
             result = self._publish(revision, principal)
             committed = not result.duplicate
-            return result
         finally:
             if not committed:
                 self.storage.delete(key)
+        if self.agent_control:
+            self.agent_control.dispatch(project_id)
+        return result
 
     def _publish(
         self, revision: ProjectSourceRevision, principal: Principal
@@ -151,6 +170,8 @@ class ProjectSourceService:
                     "sha256": revision.sha256,
                 },
             )
+            if self.agent_control:
+                self.agent_control.record_revision(repo, revision, principal)
         return RevisionUploadResult(revision=revision, duplicate=False)
 
     def content(

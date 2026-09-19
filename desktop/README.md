@@ -35,11 +35,11 @@ script derives the host triple from rustc; it does not assume Windows on Linux. 
 outputs platform bundles under `desktop/src-tauri/target/release/bundle`. A packaged end
 user does not install Python, Node, Docker, PostgreSQL, or model keys.
 
-Optional local parsers/solvers must first be installed through uv extras, then included
-with `--feature ifcopenshell`, `--feature ortools`, or `--feature docling` when invoking
-`scripts/build_desktop.py` (or `scripts/build_sidecar.py`). Docling model weights must
-be staged separately for offline PDF parsing. The default offline coordination demo does
-not require those features.
+The desktop extra and sidecar build include IfcOpenShell by default. Optional
+OR-Tools/Docling must first be installed through uv extras, then included with
+`--feature ortools` or `--feature docling`. Docling model weights must be staged
+separately for offline PDF parsing. Desktop startup does not seed a demo;
+`CCA_SEED_DEMO=true` is an explicit regression/demo opt-in.
 
 ## Runtime boundary
 
@@ -50,6 +50,63 @@ accepts only an explicitly selected regular file, checks extension and size befo
 after reading, and sends it to the authenticated API. On exit, Rust requests a graceful
 backend shutdown before killing any remaining child. Local database state lives in the
 operating-system application-data directory.
+
+A trusted launcher may set `CCA_DESKTOP_DATA_DIR` to an absolute directory for
+isolated qualification. Relative/empty values fail closed. This is deliberately
+separate from the Python development setting `CCA_DATA_DIR` and is not a renderer
+command or file permission. Windows WebView test storage is isolated separately
+using `WEBVIEW2_USER_DATA_FOLDER`; Linux uses the XDG environment variables.
+The Windows WebDriver session also receives that exact folder through Microsoft's
+[`webviewOptions.userDataFolder`](https://learn.microsoft.com/en-us/microsoft-edge/webdriver/capabilities-edge-options#webviewoptions-object)
+capability so the driver and WebView agree on their automation profile.
+Windows CI invokes `scripts/windows_native_user.py` to restrict only the harness
+and its descendants to normal-user rights. WebView2 150+ intentionally ignores
+environment overrides from elevated hosts ([Microsoft explanation](https://github.com/MicrosoftEdge/WebView2Feedback/issues/5640#issuecomment-4923662109)).
+The launcher uses Windows SAFER and Medium integrity under the same account;
+it changes no registry policy, filesystem ACL or product binary. Failures to
+create the restricted process fail qualification rather than skipping the test.
+
+## Native WebView regression
+
+Build through `scripts/build_desktop.py` / the Tauri CLI, which embeds the frontend.
+A plain Cargo build can retain the development URL and is not a packaged UI test.
+Install `tauri-driver` and the native driver following the
+[official Tauri instructions](https://v2.tauri.app/develop/tests/webdriver/manual-setup/).
+Windows needs `msedgedriver` matching its WebView2 version; Linux needs
+`WebKitWebDriver` and a display (for example xvfb).
+
+```powershell
+python scripts/native_webdriver_smoke.py --application desktop/src-tauri/target/release/construction-coordination-agent.exe --output artifacts/native-webview.json
+
+# Real packaged WebGL/worker/WASM and explicit IFC import, with no CCA_BIM override:
+python scripts/generate_ifc_fixture.py
+python scripts/native_webdriver_smoke.py --application desktop/src-tauri/target/release/construction-coordination-agent.exe --ifc-fixture fixtures/harbor-east.ifc --output artifacts/native-ifc.json
+```
+
+This launches the real packaged WebView and sidecar with isolated synthetic data,
+submits a change through the current UI, verifies approval is required, executes
+the simulated action, and checks a fresh READY snapshot through the authenticated
+sidecar API. JSON, driver logs and a screenshot are written under `artifacts`;
+isolated application data stays in `.verification-work/native-webview-*` for
+inspection. The manual native CI workflow runs this on Windows and Linux. This
+regression does not claim new-project UI/IFC-diff joint acceptance or installation
+and signing qualification.
+
+The IFC scenario selects the generated real IFC through the WebView's native file
+input, renders its geometry, confirms opening a local file does not publish it,
+explicitly imports it, checks three parsed elements and the downloaded original's
+SHA-256, and reopens the persisted model. It uses the default desktop IfcOpenShell
+provider; only demo-project creation is opted in for this regression. WebDriver file
+selection does not qualify the OS file picker. This scenario also runs in the
+Windows/Linux native workflow, with separate JSON and screenshots.
+
+The packaged HTTP and Agent smoke commands also write their `--output` JSON on
+failure, before removing temporary fixture data. Reports retain startup stages
+(`launch`, `endpoint`, `health`, `ready`), endpoint/startup timings and child exit
+codes. Failure reports include bounded stdout/stderr tails with the per-run API
+token redacted. The existing CI artifact upload retains these JSON files even
+when a check fails. The sidecar's total startup budget remains 30 seconds; these
+diagnostics do not add retries or convert a failure into a pass.
 
 ## Qualification and release
 
