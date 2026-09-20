@@ -72,8 +72,8 @@ class BimBindingService:
                     work_package_id=work_package_id,
                     element_ids=(global_id,),
                     fact=(
-                        f"{principal.id} confirmed BIM element {global_id} for "
-                        f"Work Package {work_package_id}."
+                        f"Human-confirmed BIM binding associates element {global_id} "
+                        f"with Work Package {work_package_id}."
                     ),
                 )
                 repo.save_evidence(evidence)

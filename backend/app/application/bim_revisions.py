@@ -202,7 +202,10 @@ class BimRevisionService:
             comparison=comparison,
             changes=changes,
             affected_work_packages=tuple(
-                AffectedWorkPackage(work_package_id=key, changes=tuple(value))
+                AffectedWorkPackage(
+                    work_package_id=key,
+                    changes=tuple(sorted(value, key=lambda item: item.global_id)),
+                )
                 for key, value in sorted(by_package.items())
             ),
         )

@@ -3,7 +3,8 @@
 import hashlib
 
 import pytest
-from app.domain.agent import AgentRequest, AgentScope
+from app.domain.agent import AgentAnswer, AgentRequest, AgentScope
+from app.domain.agent_tools import RevisionQuery, WorkPackageQuery
 from app.domain.bim_revisions import CompareBimRevisions
 from app.domain.errors import NotFound, StaleSnapshotError
 from app.domain.models import ProjectSnapshot
@@ -299,3 +300,103 @@ def test_binding_requires_human_permission_and_an_imported_confirmed_global_id(
         ).status_code
         == 409
     )
+
+
+def test_compare_first_then_bind_exposes_scoped_change_and_impact(
+    client, services, monkeypatch, admin
+):
+    project, package, source = create_project_source(client)
+    r1 = upload_revision(client, project["id"], source["id"], "r1.ifc", b"R1")
+    r2 = upload_revision(client, project["id"], source["id"], "r2.ifc", b"R2")
+    monkeypatch.setattr(services.jobs.ifc, "parse", parse_fixture)
+    for revision in (r1, r2):
+        response = client.post(
+            f"/api/projects/{project['id']}/sources/{source['id']}"
+            f"/revisions/{revision['id']}/import"
+        )
+        assert response.status_code == 202, response.text
+
+    class FakeIfcDiff:
+        def compare(self, old_content, new_content):
+            return NormalizedIfcDiff(
+                engine="ifcdiff",
+                engine_version="0.8.5",
+                added=frozenset({"replacement-duct"}),
+                deleted=frozenset({"stable-wall"}),
+                changed={},
+                raw={"added": ["replacement-duct"], "deleted": ["stable-wall"]},
+                compare_seconds=0.1,
+            )
+
+    services.bim_revisions.comparison = FakeIfcDiff()
+    comparison = client.post(
+        f"/api/projects/{project['id']}/sources/{source['id']}/bim-comparisons",
+        json={"from_revision_id": r1["id"], "to_revision_id": r2["id"]},
+    )
+    assert comparison.status_code == 201, comparison.text
+    assert comparison.json()["affected_work_packages"] == []
+
+    confirmed = client.post(
+        f"/api/projects/{project['id']}/sources/{source['id']}/bim-bindings",
+        json={
+            "revision_id": r1["id"],
+            "bindings": [
+                {"work_package_id": package["id"], "global_ids": ["stable-wall"]}
+            ],
+        },
+    )
+    assert confirmed.status_code == 201, confirmed.text
+    detail = client.get(
+        f"/api/projects/{project['id']}/sources/{source['id']}"
+        f"/bim-comparisons/{comparison.json()['comparison']['id']}"
+    ).json()
+    assert detail["affected_work_packages"][0]["work_package_id"] == package["id"]
+
+    observed = {}
+
+    class CapturingInvestigator:
+        mode = "compare-first-bind-later-test"
+
+        def investigate(self, instruction, scope, tools):
+            overview = tools.project_state()
+            observed["changes"] = tools.bim_changes(
+                RevisionQuery(
+                    source_id=source["id"],
+                    from_revision_id=r1["id"],
+                    to_revision_id=r2["id"],
+                )
+            )
+            observed["bindings"] = tools.work_package_bindings(
+                WorkPackageQuery(work_package_ids=(package["id"],))
+            )
+            return AgentAnswer(
+                summary="Compared BIM revisions with current bindings.",
+                evidence_ids=(overview.evidence[0].id,),
+            )
+
+    services.investigations.engine = CapturingInvestigator()
+    run = services.agent.enqueue(
+        project["id"],
+        AgentRequest(
+            instruction="Investigate the bound change.",
+            scope=AgentScope(
+                source_id=source["id"],
+                from_revision_id=r1["id"],
+                to_revision_id=r2["id"],
+                work_package_ids=(package["id"],),
+            ),
+        ),
+        admin,
+    )
+
+    assert [change.global_id for change in observed["changes"].changes] == ["stable-wall"]
+    assert observed["bindings"].bindings[0].work_package_id == package["id"]
+    with services.factory.open() as repo:
+        analysis = repo.analysis(run.analysis_id)
+        report = repo.investigation_report(run.id)
+        assert analysis.impact.work_package_ids == (package["id"],)
+        assert analysis.impact.element_ids == ("stable-wall",)
+        assert {trace.tool for trace in report.tools} >= {
+            "bim_changes",
+            "work_package_bindings",
+        }

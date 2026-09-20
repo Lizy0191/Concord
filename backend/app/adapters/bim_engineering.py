@@ -40,15 +40,20 @@ class PersistedBimEngineering:
             changes = repo.bim_element_changes(comparison.id)
             evidence = repo.evidence_by_ids(snapshot.project_id, comparison.evidence_ids)
             allowed = package_ids(repo.state(snapshot.project_id), scope)
-
-        if scope.work_package_ids or scope.area_ids:
-            evidence = [item for item in evidence if item.work_package_id in allowed]
+            visible = {item.global_id for item in changes}
+            if scope.work_package_ids or scope.area_ids:
+                visible &= {
+                    binding.global_id
+                    for binding in repo.bim_bindings(
+                        snapshot.project_id, query.source_id, visible
+                    )
+                    if binding.work_package_id in allowed
+                }
         if scope.element_ids:
-            selected = set(scope.element_ids)
-            evidence = [item for item in evidence if selected.intersection(item.element_ids)]
+            visible &= set(scope.element_ids)
         if scope.work_package_ids or scope.area_ids or scope.element_ids:
-            visible = {identity for item in evidence for identity in item.element_ids}
             changes = [item for item in changes if item.global_id in visible]
+            evidence = [item for item in evidence if visible.intersection(item.element_ids)]
         return ReadResult(
             evidence=tuple(evidence),
             changes=tuple(
