@@ -443,6 +443,7 @@ bim = [
     { name = "ifcopenshell" },
 ]
 desktop = [
+    { name = "ifcdiff" },
     { name = "ifcopenshell" },
     { name = "pyinstaller" },
 ]
@@ -492,6 +493,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "httpx", specifier = ">=0.28,<1" },
     { name = "ifcdiff", marker = "extra == 'bim'", specifier = "==0.8.5" },
+    { name = "ifcdiff", marker = "extra == 'desktop'", specifier = "==0.8.5" },
     { name = "ifcopenshell", marker = "extra == 'bim'", specifier = ">=0.8.5,<0.9" },
     { name = "ifcopenshell", marker = "extra == 'desktop'", specifier = ">=0.8.5,<0.9" },
     { name = "minio", marker = "extra == 'storage'", specifier = ">=7.2.20,<8" },
