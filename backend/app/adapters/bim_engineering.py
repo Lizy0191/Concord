@@ -53,7 +53,16 @@ class PersistedBimEngineering:
             visible &= set(scope.element_ids)
         if scope.work_package_ids or scope.area_ids or scope.element_ids:
             changes = [item for item in changes if item.global_id in visible]
-            evidence = [item for item in evidence if visible.intersection(item.element_ids)]
+            evidence = [
+                item
+                for item in evidence
+                if visible.intersection(item.element_ids)
+                and (
+                    not (scope.work_package_ids or scope.area_ids)
+                    or item.work_package_id is None
+                    or item.work_package_id in allowed
+                )
+            ]
         return ReadResult(
             evidence=tuple(evidence),
             changes=tuple(
