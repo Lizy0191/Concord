@@ -1,5 +1,14 @@
 # Third-party notices
 
+## MinIO RELEASE.2025-09-07T16-13-09Z (CI fixture only)
+
+- Source: https://github.com/minio/minio/releases/tag/RELEASE.2025-09-07T16-13-09Z
+- License: GNU Affero General Public License v3.0; upstream source and license are available at the release link
+- Use: ephemeral loopback-only S3 service for real storage integration tests
+- Modification: none; CI downloads the official binary and verifies its pinned SHA-256 as on main
+- Distribution: not bundled in the application, desktop installers or release artifacts
+- Replaceability: test-service provisioning only; the application retains its S3-compatible storage adapter
+
 ## IfcDiff 0.8.5
 
 - Project: IfcDiff, distributed by the IfcOpenShell project

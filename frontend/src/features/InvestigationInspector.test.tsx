@@ -48,6 +48,8 @@ it("presents a durable investigation as context, trace, and evidence", () => {
               provider: "bim",
               source_id: "MEP Model",
               source_revision: "R2",
+              source_revision_id: null,
+              viewer_target: null,
               observed_at: "2026-01-01T00:00:00Z",
               work_package_id: "WP-27",
               element_ids: ["gid-1"],
