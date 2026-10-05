@@ -202,4 +202,5 @@ def capabilities(svc, probe: bool = False) -> list[Capability]:
             reason=svc.telemetry.reason,
         )
     )
+    result.extend(svc.comparisons.capability_status())
     return result

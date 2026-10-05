@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.auth import CurrentUser, services
+from app.domain.comparisons import ComparisonRequest
 from app.domain.engineering import (
     Change,
     Coordination,
@@ -14,9 +15,17 @@ from app.domain.engineering import (
     ReCheckRequest,
 )
 from app.domain.models import Evidence, Finding
+from app.domain.runs import AgentRun
 from app.policies.actions import require
 
 router = APIRouter(prefix="/api/projects/{project_id}/engineering", tags=["engineering"])
+
+
+@router.post("/comparisons", response_model=AgentRun, status_code=202)
+def compare_originals(
+    project_id: str, request: ComparisonRequest, user: CurrentUser, svc=Depends(services)
+):
+    return svc.comparisons.submit(project_id, request, user)
 
 
 @router.get("/ids-requirements", response_model=IDSRequirementsSelection | None)
