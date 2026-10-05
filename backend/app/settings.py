@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     ifc_path: Path | None = None
     document_parser: Literal["lightweight", "docling"] = "lightweight"
     optimization_enabled: bool = False
+    # Optional engineering engines stay off in local/desktop profiles unless explicitly enabled.
+    ifc_clash_enabled: bool = False
+    ids_validation_enabled: bool = False
     vector_enabled: bool = False
     otel_enabled: bool = False
     otel_endpoint: str = "http://127.0.0.1:4318/v1/traces"
