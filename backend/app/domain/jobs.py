@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
+from app.domain.comparisons import BoundComparison
 from app.domain.models import Model, new_id
 from app.domain.scheduling import SchedulingProblem
 from app.domain.source_imports import SourceReference
@@ -49,7 +50,12 @@ class EmbeddingIndexRequest(Model):
 
 
 JobInput = Annotated[
-    DocumentImport | BIMImport | OptimizationRequest | VisionRequest | EmbeddingIndexRequest,
+    DocumentImport
+    | BIMImport
+    | OptimizationRequest
+    | VisionRequest
+    | EmbeddingIndexRequest
+    | BoundComparison,
     Field(discriminator="kind"),
 ]
 

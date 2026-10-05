@@ -26,6 +26,7 @@ from app.application.baselines import BaselineService
 from app.application.bim_bindings import BimBindingService
 from app.application.bim_revisions import BimRevisionService
 from app.application.capability_jobs import CapabilityJobService
+from app.application.comparisons import ComparisonService
 from app.application.coordination import CoordinationService
 from app.application.derived_artifacts import DerivedArtifacts
 from app.application.engineering_findings import FindingService
@@ -40,6 +41,7 @@ from app.application.workflow import WorkflowCoordinator
 from app.bootstrap_capabilities import build_capability_jobs
 from app.domain.actions import Principal
 from app.domain.errors import DomainError
+from app.ports.comparisons import ComparisonExecutor
 from app.ports.engineering import EngineeringCapability
 from app.ports.services import DurableRuntime
 from app.settings import Settings
@@ -73,6 +75,7 @@ class Services:
     rechecks: ReCheckService
     artifacts: DerivedArtifacts
     ids_requirements: IDSRequirementsService
+    comparisons: ComparisonService
 
     resources: ExitStack
 
@@ -81,7 +84,10 @@ class Services:
 
 
 def build_services(
-    settings: Settings, *, engineering_capabilities: tuple[EngineeringCapability, ...] | None = None
+    settings: Settings,
+    *,
+    engineering_capabilities: tuple[EngineeringCapability, ...] | None = None,
+    comparison_executors: tuple[ComparisonExecutor, ...] = (),
 ) -> Services:
     with ExitStack() as resources:
         settings.data_dir.mkdir(parents=True, exist_ok=True)
@@ -163,6 +169,10 @@ def build_services(
         for capability in selected_capabilities:
             rechecks.register(capability)
         workflow.rechecks = rechecks
+        comparisons = ComparisonService(factory, storage, artifacts, runtime_name)
+        for executor in comparison_executors:
+            comparisons.register(executor)
+        workflow.comparisons = comparisons
         observed_workflow = ObservedWorkflow(workflow, telemetry)
         if settings.diagnostic_runtime:
             from app.adapters.runtime_diagnostic import DiagnosticRuntime
@@ -189,6 +199,7 @@ def build_services(
             )
         resources.callback(runtime.close)
         rechecks.runtime = runtime
+        comparisons.runtime = runtime
         agent_control = AgentControlService(factory, runtime, runtime_name)
         sources = ProjectSourceService(
             factory,
@@ -224,6 +235,7 @@ def build_services(
             rechecks,
             artifacts,
             IDSRequirementsService(factory, sources, rechecks),
+            comparisons,
             resources,
         )
         result.sources.rechecks = rechecks

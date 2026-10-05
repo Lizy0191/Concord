@@ -25,6 +25,8 @@ class AgentRun(Model):
         "coordination",
         "investigation",
         "engineering_recheck",
+        "pdf_comparison",
+        "cad_comparison",
         "document_parse",
         "bim_import",
         "optimization",
