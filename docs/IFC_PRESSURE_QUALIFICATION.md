@@ -105,7 +105,20 @@ and Playwright attachments remain local and must not be committed.
 These synthetic pressure samples extend browser/cache/lifecycle evidence only.
 They do not complete representative complex-project or native GPU/WebView
 qualification, documented native Revit/AutoCAD/Navisworks connector delivery,
-A's trusted PDF/CAD execution/artifact/publication fence, B's actual post-rebase
+packaged engineering runtime acceptance, B's actual post-rebase
 product integration or the persisted R1/R2/R3 Golden workflow. Peer approvals and
 resolved review conversations remain required; passing this lane does not
 permit Ready, merge or business closure.
+
+## Current-main rerun and mixed geometry
+
+The October 5 continuation on C `0ffe506` / main `fb4f5be` reran the grid
+scenarios and adds opt-in mixed geometry. Set `CCA_IFC_PRESSURE_GEOMETRY=mixed`
+and `CCA_IFC_PRESSURE_ELEMENTS=1000` for genuine hollow circular extrusions,
+Boolean subtraction, mapped geometry and nested rotated placements. The default
+grid source remains byte-identical. Mixed outputs are separate, and the same
+real browser assertions remain in force. Nine source-generator/CLI cases and three
+three-session browser scenarios passed. Measurements, setup failures and exact
+remaining gates are recorded in [the final acceptance ledger](ISSUE17_FINAL_ACCEPTANCE.md).
+These synthetic cases broaden geometry coverage without claiming production
+project or packaged Autodesk/WebView acceptance.

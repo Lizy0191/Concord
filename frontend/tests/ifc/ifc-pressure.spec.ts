@@ -14,9 +14,12 @@ test("real pressure IFC navigates distant elements, reuses artifacts and release
     throw new Error(
       "CCA_IFC_PRESSURE_ELEMENTS must be an integer from 1000 to 100000",
     );
+  const geometry = process.env.CCA_IFC_PRESSURE_GEOMETRY ?? "grid";
+  if (geometry !== "grid" && geometry !== "mixed")
+    throw new Error("CCA_IFC_PRESSURE_GEOMETRY must be grid or mixed");
   const output = resolve(
     "../.verification-work/ifc-pressure",
-    String(count),
+    geometry === "grid" ? String(count) : `${count}-mixed`,
     "pressure.ifc",
   );
   execFileSync(
@@ -32,6 +35,8 @@ test("real pressure IFC navigates distant elements, reuses artifacts and release
       output,
       "--elements",
       String(count),
+      "--geometry",
+      geometry,
     ],
     { timeout: 120000 },
   );
