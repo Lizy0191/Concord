@@ -75,6 +75,8 @@ const CATEGORY: Record<string, string> = {
   coordination: "协调分析",
   investigation: "范围调查",
   engineering_recheck: "工程复查",
+  pdf_comparison: "PDF 版本比较",
+  cad_comparison: "CAD 版本比较",
   document_parse: "文档解析",
   bim_import: "BIM 导入",
   optimization: "排程优化",

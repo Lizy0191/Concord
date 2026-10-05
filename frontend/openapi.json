@@ -336,6 +336,63 @@
         }
       }
     },
+    "/api/projects/{project_id}/engineering/comparisons": {
+      "post": {
+        "tags": [
+          "engineering"
+        ],
+        "summary": "Compare Originals",
+        "operationId": "compare_originals_api_projects__project_id__engineering_comparisons_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComparisonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{project_id}/engineering/ids-requirements": {
       "get": {
         "tags": [
@@ -4467,6 +4524,8 @@
               "coordination",
               "investigation",
               "engineering_recheck",
+              "pdf_comparison",
+              "cad_comparison",
               "document_parse",
               "bim_import",
               "optimization",
@@ -5574,6 +5633,88 @@
         ],
         "title": "Body_vision_api_projects__project_id__vision_post"
       },
+      "BoundComparison": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pdf_comparison",
+              "cad_comparison"
+            ],
+            "title": "Kind"
+          },
+          "operation_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Operation Id"
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source Id"
+          },
+          "from_revision_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "From Revision Id"
+          },
+          "to_revision_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "To Revision Id"
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "maxProperties": 64,
+            "title": "Options"
+          },
+          "engine": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Engine"
+          },
+          "engine_version": {
+            "type": "string",
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Engine Version"
+          },
+          "revisions": {
+            "prefixItems": [
+              {
+                "$ref": "#/components/schemas/ProjectSourceRevision"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectSourceRevision"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Revisions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "operation_id",
+          "source_id",
+          "from_revision_id",
+          "to_revision_id",
+          "options",
+          "engine",
+          "engine_version",
+          "revisions"
+        ],
+        "title": "BoundComparison"
+      },
       "CadTarget": {
         "properties": {
           "source_revision_id": {
@@ -5830,6 +5971,9 @@
               },
               {
                 "$ref": "#/components/schemas/EmbeddingIndexRequest-Output"
+              },
+              {
+                "$ref": "#/components/schemas/BoundComparison"
               }
             ],
             "title": "Request",
@@ -5837,9 +5981,11 @@
               "propertyName": "kind",
               "mapping": {
                 "bim_import": "#/components/schemas/BIMImport",
+                "cad_comparison": "#/components/schemas/BoundComparison",
                 "document_parse": "#/components/schemas/DocumentImport",
                 "embedding_index": "#/components/schemas/EmbeddingIndexRequest-Output",
                 "optimization": "#/components/schemas/OptimizationRequest",
+                "pdf_comparison": "#/components/schemas/BoundComparison",
                 "vision": "#/components/schemas/VisionRequest"
               }
             }
@@ -6036,6 +6182,58 @@
           "to_revision_id"
         ],
         "title": "CompareBimRevisions"
+      },
+      "ComparisonRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pdf_comparison",
+              "cad_comparison"
+            ],
+            "title": "Kind"
+          },
+          "operation_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Operation Id"
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source Id"
+          },
+          "from_revision_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "From Revision Id"
+          },
+          "to_revision_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "To Revision Id"
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "maxProperties": 64,
+            "title": "Options"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "operation_id",
+          "source_id",
+          "from_revision_id",
+          "to_revision_id"
+        ],
+        "title": "ComparisonRequest"
       },
       "ComparisonSummary": {
         "properties": {

@@ -8,6 +8,7 @@ from app.application.coordination import CoordinationService
 
 if TYPE_CHECKING:
     from app.application.capability_jobs import CapabilityJobService
+    from app.application.comparisons import ComparisonService
     from app.application.rechecks import ReCheckService
 
 
@@ -30,6 +31,7 @@ class WorkflowCoordinator:
         self.coordination, self.actions = coordination, actions
         self.capabilities: CapabilityJobService | None = None
         self.rechecks: ReCheckService | None = None
+        self.comparisons: ComparisonService | None = None
 
     def begin(self, run_id: str, *, generation: int | None = None) -> str:
         with self.factory.open() as repo:
@@ -51,6 +53,10 @@ class WorkflowCoordinator:
                 # Keep the exact proposal/approval identity when authoritative facts match.
                 return run.status
         try:
+            if run.category in {"pdf_comparison", "cad_comparison"}:
+                if self.comparisons is None:
+                    raise PermissionDenied("Comparison worker is not initialized")
+                return self.comparisons.process(run_id, generation=run.generation)
             if run.category == "engineering_recheck":
                 if self.rechecks is None:
                     raise PermissionDenied("ReCheck worker is not initialized")
